@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   let html = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8');
   html = html
     .replace('__FIREBASE_API_KEY__',             process.env.FIREBASE_API_KEY)
@@ -12,5 +12,5 @@ export default function handler(req, res) {
     .replace('__FIREBASE_APP_ID__',              process.env.FIREBASE_APP_ID)
     .replace('__FIREBASE_MEASUREMENT_ID__',      process.env.FIREBASE_MEASUREMENT_ID);
   res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-}
+  res.end(html);
+};
