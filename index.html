@@ -10,13 +10,13 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 const firebaseConfig = {
-  apiKey:            "__FIREBASE_API_KEY__",
-  authDomain:        "__FIREBASE_AUTH_DOMAIN__",
-  projectId:         "__FIREBASE_PROJECT_ID__",
-  storageBucket:     "__FIREBASE_STORAGE_BUCKET__",
-  messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-  appId:             "__FIREBASE_APP_ID__",
-  measurementId:     "__FIREBASE_MEASUREMENT_ID__"
+  apiKey: "AIzaSyCYgZ0cQoBGSukC7hKo-U3OXZsnwrG7RYQ",
+  authDomain: "gestion-de-objetivos-001.firebaseapp.com",
+  projectId: "gestion-de-objetivos-001",
+  storageBucket: "gestion-de-objetivos-001.firebasestorage.app",
+  messagingSenderId: "29467583098",
+  appId: "1:29467583098:web:71619b57754945f16711c3",
+  measurementId: "G-SCFBG5ZMS0"
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
@@ -78,7 +78,7 @@ body.light .toast{box-shadow:0 8px 24px rgba(15,30,53,.15)}
 /* Transición suave al cambiar tema */
 body,body *{transition:background-color .25s,border-color .25s,color .18s;}
 /* No interferir con animaciones importantes */
-.dot,.popup,canvas,.fade,@keyframes{transition:none!important;}
+.dot,.popup,canvas,.fade,/*@keyframes{transition:none!important;}*/
 body.switching *{transition:background-color .25s,border-color .25s,color .18s!important;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
