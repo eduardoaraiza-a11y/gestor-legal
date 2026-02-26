@@ -6,38 +6,7 @@
 <title>Gestor de Objetivos — Legal</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-const firebaseConfig = {
-  apiKey:            "__FIREBASE_API_KEY__",
-  authDomain:        "__FIREBASE_AUTH_DOMAIN__",
-  projectId:         "__FIREBASE_PROJECT_ID__",
-  storageBucket:     "__FIREBASE_STORAGE_BUCKET__",
-  messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-  appId:             "__FIREBASE_APP_ID__",
-  measurementId:     "__FIREBASE_MEASUREMENT_ID__"
 
-};
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-window._fb = {
-  guardar: async function(registros){
-    try{
-      await setDoc(doc(db,'gestor-legal','datos'),{registros:registros,updated:Date.now()});
-    }catch(e){ console.warn('Firebase guardar:',e); }
-  },
-  cargar: async function(){
-    try{
-      var snap=await getDoc(doc(db,'gestor-legal','datos'));
-      if(snap.exists()&&snap.data().registros) return snap.data().registros;
-    }catch(e){ console.warn('Firebase cargar:',e); }
-    return null;
-  }
-};
-window._fbListo=true;
-document.dispatchEvent(new Event('firebase-listo'));
-</script>
 <style>
 :root{
   --bg:#07101C;--bg2:#0C1826;--card:#101F30;--card2:#162435;
@@ -79,7 +48,7 @@ body.light .toast{box-shadow:0 8px 24px rgba(15,30,53,.15)}
 /* Transición suave al cambiar tema */
 body,body *{transition:background-color .25s,border-color .25s,color .18s;}
 /* No interferir con animaciones importantes */
-.dot,.popup,canvas,.fade,/*@keyframes{transition:none!important;}*/
+.dot,.popup,canvas,.fade,@keyframes{transition:none!important;}
 body.switching *{transition:background-color .25s,border-color .25s,color .18s!important;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -1030,38 +999,41 @@ function testUrgencia(){
 // ═══ CAPACIDAD DEL SISTEMA ═══
 
 // ═══ PERSISTENCIA ═══
+// ═══ BACKEND API — datos viajan cifrados, keys nunca en el navegador ═══
 function guardarDatos(){
+  // Respaldo local
   try{localStorage.setItem('gob3',JSON.stringify(DB));}catch(e){}
-  if(window._fb){
-    window._fb.guardar(DB).catch(function(e){console.warn('Firebase guardar:',e);});
-  }
+  // Guardar en backend (Vercel → Firebase)
+  fetch('/api/registros',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({registros:DB})
+  }).catch(function(e){console.warn('Backend guardar:',e);});
 }
 
 function cargarDatos(){
   var VERSION='legal-v1';
-  if(window._fb){
-    window._fb.cargar().then(function(registros){
-      if(registros && registros.length){
-        DB=registros;
+  fetch('/api/registros')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.registros && data.registros.length){
+        DB=data.registros;
         recalcCnt();
         actuTodo();
-        toast('☁️ Datos cargados desde Firebase');
+        toast('☁️ Datos cargados desde la nube');
       } else {
+        // Backend vacío — cargar SEED_DATA y subirlo
         DB=JSON.parse(JSON.stringify(SEED_DATA));
         recalcCnt();
         actuTodo();
         guardarDatos();
         toast('✅ Datos iniciales cargados');
       }
-    }).catch(function(){
+    })
+    .catch(function(){
+      // Sin conexión al backend — usar localStorage o SEED_DATA
       _cargarLocal(VERSION);
     });
-  } else {
-    document.addEventListener('firebase-listo',function(){
-      cargarDatos();
-    },{once:true});
-    _cargarLocal(VERSION);
-  }
 }
 
 function _cargarLocal(VERSION){
@@ -2053,6 +2025,64 @@ function importarJSON(inp){
   r.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.datos&&Array.isArray(d.datos)){if(!confirm('¿Importar '+d.datos.length+' registros?'))return;DB=d.datos;if(d.cfg)CFG=Object.assign(CFG,d.cfg);guardarDatos();try{localStorage.setItem('gob3cfg',JSON.stringify(CFG));}catch(ex){}recalcCnt();cargarCfg();actuTodo();toast('✅ '+DB.length+' registros importados');}else{alert('Formato incorrecto.');}}catch(ex){alert('Error: '+ex.message);}};
   r.readAsText(f);inp.value='';
 }
+function exportarPDF(){
+  var venc=DB.filter(function(d){return ta(d)==='v';});
+  var crit=DB.filter(function(d){return ta(d)==='c';});
+  var prox=DB.filter(function(d){return ta(d)==='p';});
+  var comp=DB.filter(function(d){return d.estado==='Completado';});
+  var objs=DB.filter(function(d){return d.nivel==='Objetivo';});
+  var avG=DB.length?Math.round(DB.reduce(function(s,d){return s+(d.avance||0);},0)/DB.length):0;
+  var ahora=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  var w=window.open('','_blank');
+  if(!w){toast('⚠️ Permite ventanas emergentes para descargar el PDF');return;}
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Reporte — '+CFG.empresa+'</title>');
+  w.document.write('<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#0F1E35;background:#fff;padding:32px}');
+  w.document.write('.hdr{border-bottom:3px solid #3B82F6;padding-bottom:16px;margin-bottom:24px}.hdr h1{font-size:22px;color:#3B82F6;margin-bottom:4px}.hdr p{color:#6B82A0;font-size:11px}');
+  w.document.write('.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}');
+  w.document.write('.kpi{background:#F8FAFF;border:1px solid #D1DCF0;border-radius:8px;padding:14px;text-align:center}');
+  w.document.write('.kpi-v{font-size:28px;font-weight:800;color:#3B82F6;font-family:monospace}.kpi-l{font-size:10px;color:#6B82A0;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}');
+  w.document.write('.section{margin-bottom:20px}.section h2{font-size:13px;font-weight:700;border-left:4px solid #3B82F6;padding-left:10px;margin-bottom:10px}');
+  w.document.write('.item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #EEF2FF}');
+  w.document.write('.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}');
+  w.document.write('.dv{background:#EF4444}.dc{background:#F59E0B}.dp{background:#F97316}.dok{background:#10B981}');
+  w.document.write('.item-nom{font-size:11px;font-weight:600;margin-bottom:2px}.item-meta{font-size:10px;color:#6B82A0}');
+  w.document.write('.footer{margin-top:32px;padding-top:12px;border-top:1px solid #D1DCF0;font-size:10px;color:#6B82A0;text-align:center}');
+  w.document.write('@media print{body{padding:16px}.no-print{display:none}}');
+  w.document.write('</style></head><body>');
+  w.document.write('<div class="hdr"><h1>📋 '+CFG.empresa+' — Reporte de Objetivos</h1><p>Generado el '+ahora+'</p></div>');
+  w.document.write('<div class="kpis">');
+  w.document.write('<div class="kpi"><div class="kpi-v">'+DB.length+'</div><div class="kpi-l">Total registros</div></div>');
+  w.document.write('<div class="kpi"><div class="kpi-v" style="color:#EF4444">'+venc.length+'</div><div class="kpi-l">Vencidos</div></div>');
+  w.document.write('<div class="kpi"><div class="kpi-v" style="color:#10B981">'+comp.length+'</div><div class="kpi-l">Completados</div></div>');
+  w.document.write('<div class="kpi"><div class="kpi-v">'+avG+'%</div><div class="kpi-l">Avance promedio</div></div>');
+  w.document.write('</div>');
+  if(venc.length){
+    w.document.write('<div class="section"><h2 style="color:#EF4444">🔴 Vencidos ('+venc.length+')</h2>');
+    venc.forEach(function(d){
+      w.document.write('<div class="item"><span class="dot dv"></span><div><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+d.responsable+' · '+d.estado+'</div></div></div>');
+    });
+    w.document.write('</div>');
+  }
+  if(crit.length){
+    w.document.write('<div class="section"><h2 style="color:#F59E0B">🟡 Críticos ('+crit.length+')</h2>');
+    crit.forEach(function(d){
+      w.document.write('<div class="item"><span class="dot dc"></span><div><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+d.responsable+' · '+diasR(d.fechaFin)+' días restantes</div></div></div>');
+    });
+    w.document.write('</div>');
+  }
+  if(objs.length){
+    w.document.write('<div class="section"><h2>📊 Objetivos ('+objs.length+')</h2>');
+    objs.forEach(function(d){
+      w.document.write('<div class="item"><span class="dot '+(d.estado==='Completado'?'dok':ta(d)==='v'?'dv':ta(d)==='c'?'dc':'dp')+'"></span><div><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+d.responsable+' · Avance: '+d.avance+'% · '+d.estado+'</div></div></div>');
+    });
+    w.document.write('</div>');
+  }
+  w.document.write('<div class="footer">'+CFG.empresa+' · Gestor de Objetivos Legal · '+ahora+'</div>');
+  w.document.write('<br><button class="no-print" onclick="window.print()" style="margin:16px auto;display:block;padding:10px 24px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700">🖨️ Imprimir / Guardar como PDF</button>');
+  w.document.write('</body></html>');
+  w.document.close();
+}
+
 function borrarTodo(){if(!confirm('⚠️ ¿Borrar todos los datos?'))return;if(!confirm('Confirmación final: ¿borrar absolutamente todo?'))return;DB=[];cnt={OBJ:0,ACT:0,TAR:0,SUB:0};guardarDatos();actuTodo();toast('Datos eliminados.');}
 
 function actuTodo(){
