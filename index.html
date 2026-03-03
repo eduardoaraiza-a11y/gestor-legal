@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gestor de Objetivos — Legal</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --bg:#07101C;--bg2:#0C1826;--card:#101F30;--card2:#162435;
+  --border:#1A2E45;--border2:#243D58;
+  --blue:#3B82F6;--blue2:#1D4ED8;--cyan:#06B6D4;
+  --green:#10B981;--yellow:#F59E0B;--red:#EF4444;--orange:#F97316;
+  --violet:#8B5CF6;
+  --text:#EEF4FF;--muted:#5A7A9A;
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:12px;
+}
+/* ── MODO CLARO ── */
+body.light{
+  --bg:#F0F4FA;--bg2:#E4EBF5;--card:#FFFFFF;--card2:#F7F9FD;
+  --border:#D1DCF0;--border2:#B8CCEB;
+  --text:#0F1E35;--muted:#6B82A0;
+}
+body.light ::-webkit-scrollbar-track{background:var(--bg)}
+body.light ::-webkit-scrollbar-thumb{background:var(--border2)}
+/* Inputs y selects en modo claro */
+body.light .inp,body.light .sel{background:#fff;color:var(--text)}
+body.light .inp::placeholder{color:#9AAEC0}
+/* Tabla hover en modo claro */
+body.light tbody tr:hover td{background:rgba(59,130,246,.04)}
+/* Sombra del modal en modo claro */
+body.light .modal{box-shadow:0 20px 60px rgba(15,30,53,.15)}
+/* Popup en modo claro */
+body.light .popup{box-shadow:0 16px 50px rgba(15,30,53,.2)}
+/* Kanban cards */
+body.light .k-card{box-shadow:0 1px 4px rgba(15,30,53,.08)}
+/* Árbol */
+body.light .tree-card{background:var(--card);border-color:var(--border)}
+body.light .tree-card:hover{background:rgba(59,130,246,.04)}
+/* Botón fantasma en claro */
+body.light .bg{color:var(--muted);border-color:var(--border2)}
+body.light .bg:hover{color:var(--text);background:var(--card2)}
+/* Toast en claro */
+body.light .toast{box-shadow:0 8px 24px rgba(15,30,53,.15)}
+/* Transición suave al cambiar tema */
+body,body *{transition:background-color .25s,border-color .25s,color .18s;}
+/* No interferir con animaciones importantes */
+.dot,.popup,canvas,.fade,@keyframes{transition:none!important;}
+body.switching *{transition:background-color .25s,border-color .25s,color .18s!important;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── NAV ── */
+.nav{position:fixed;left:0;top:0;bottom:0;width:222px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.nl{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.nl-ico{width:36px;height:36px;background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 14px rgba(59,130,246,.35)}
+.nl-txt{font-size:13px;font-weight:700;line-height:1.25}
+.nl-sub{font-size:10px;color:var(--muted);font-weight:400}
+.ni-wrap{padding:10px 8px;flex:1;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:all .15s;color:var(--muted);font-size:12.5px;font-weight:500;border:none;background:none;width:100%;text-align:left;position:relative}
+.ni:hover{background:var(--card);color:var(--text)}
+.ni.act{background:rgba(59,130,246,.14);color:var(--blue);border:1px solid rgba(59,130,246,.22)}
+.ni-ic{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.ni-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;display:none}
+.n-sep{height:1px;background:var(--border);margin:6px 0}
+.n-foot{padding:12px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)}
+.n-foot strong{display:block;color:var(--text);font-size:12px;margin-bottom:1px}
+
+/* ── MAIN ── */
+.main{margin-left:222px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:54px;border-bottom:1px solid var(--border);background:var(--bg2);backdrop-filter:blur(12px);display:flex;align-items:center;padding:0 22px;gap:12px;position:sticky;top:0;z-index:50}
+body.light .topbar{background:rgba(228,235,245,.97)}
+.tb-ttl{font-size:15px;font-weight:700}.tb-sub{font-size:11px;color:var(--muted)}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.clock{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--card);padding:4px 10px;border-radius:6px;border:1px solid var(--border)}
+.content{padding:20px 22px;flex:1}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:none;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.bp{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(59,130,246,.3)}.bp:hover{background:var(--blue2);transform:translateY(-1px)}
+.bd{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.22)}.bd:hover{background:rgba(239,68,68,.2)}
+.bg{background:transparent;color:var(--muted);border:1px solid var(--border)}.bg:hover{color:var(--text);border-color:var(--border2);background:var(--card)}
+.bs{padding:5px 10px;font-size:11px}.bx{padding:3px 8px;font-size:10px;border-radius:6px}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ch{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px}
+.cb{padding:16px 18px}
+
+/* ── KPI ── */
+.kpi-g{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
+.kpi.c1::before{background:var(--blue)}.kpi.c2::before{background:var(--cyan)}
+.kpi.c3::before{background:var(--green)}.kpi.c4::before{background:var(--yellow)}
+.kpi.c5::before{background:var(--violet)}.kpi.c6::before{background:var(--red)}
+.kpi:hover{border-color:var(--border2);transform:translateY(-2px)}
+.kpi.sel{border-color:var(--blue);background:rgba(59,130,246,.07)}
+.ki{font-size:18px;margin-bottom:6px}.kv{font-size:27px;font-weight:800;line-height:1;font-family:var(--mono);margin-bottom:3px}
+.kl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── ALERTA COLUMNS ── */
+.alerta-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:0}
+.acol{border-radius:var(--r);border:1px solid;display:flex;flex-direction:column;min-height:300px}
+.acol.av{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.04)}
+.acol.ac{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.04)}
+.acol.ap{border-color:rgba(249,115,22,.3);background:rgba(249,115,22,.03)}
+.acol.ao{border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.03)}
+.acol-hdr{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid}
+.acol.av .acol-hdr{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.1)}
+.acol.ac .acol-hdr{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.09)}
+.acol.ap .acol-hdr{border-color:rgba(249,115,22,.22);background:rgba(249,115,22,.08)}
+.acol.ao .acol-hdr{border-color:rgba(16,185,129,.18);background:rgba(16,185,129,.07)}
+.acol-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.acol.av .acol-ttl{color:var(--red)}.acol.ac .acol-ttl{color:var(--yellow)}
+.acol.ap .acol-ttl{color:var(--orange)}.acol.ao .acol-ttl{color:var(--green)}
+.acol-cnt{font-family:var(--mono);font-size:20px;font-weight:800}
+.acol.av .acol-cnt{color:var(--red)}.acol.ac .acol-cnt{color:var(--yellow)}
+.acol.ap .acol-cnt{color:var(--orange)}.acol.ao .acol-cnt{color:var(--green)}
+.acol-body{padding:8px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 260px)}
+.aitem{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s}
+.aitem:hover{border-color:var(--border2);transform:translateX(2px);box-shadow:2px 0 8px rgba(0,0,0,.3)}
+.aitem-id{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.aitem-nom{font-size:11px;font-weight:600;line-height:1.35;margin-bottom:5px}
+.aitem-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.aitem-dias{font-family:var(--mono);font-size:10px;font-weight:800;margin-left:auto}
+.acol.av .aitem-dias{color:var(--red)}.acol.ac .aitem-dias{color:var(--yellow)}
+.acol.ap .aitem-dias{color:var(--orange)}.acol.ao .aitem-dias{color:var(--green)}
+.aitem-resp{font-size:10px;color:var(--muted)}
+.aitem-prog{margin-top:5px}
+.acol-vacio{padding:24px 16px;text-align:center;color:var(--muted);font-size:12px}
+
+/* ── DOTS ── */
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0;vertical-align:middle}
+.dv{background:var(--red);animation:p 1.5s infinite}.dc{background:var(--yellow)}.dp{background:var(--orange)}.do{background:var(--green)}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}70%{box-shadow:0 0 0 7px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:9px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+tbody td{padding:8px 12px;border-bottom:1px solid rgba(26,46,69,.5);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.tbl-row:hover td{background:rgba(255,255,255,.016);cursor:pointer}
+
+/* ── CHIPS ── */
+.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.cobj{background:rgba(59,130,246,.18);color:var(--blue)}.cact{background:rgba(6,182,212,.15);color:var(--cyan)}
+.ctar{background:rgba(16,185,129,.13);color:var(--green)}.csub{background:rgba(139,92,246,.13);color:var(--violet)}
+.ni_{background:rgba(90,122,154,.15);color:var(--muted)}.ec_{background:rgba(59,130,246,.18);color:var(--blue)}
+.ep_{background:rgba(245,158,11,.15);color:var(--yellow)}.co_{background:rgba(16,185,129,.14);color:var(--green)}
+.ca_{background:rgba(239,68,68,.14);color:var(--red)}
+.pma{background:rgba(239,68,68,.18);color:var(--red)}.pal{background:rgba(249,115,22,.18);color:var(--orange)}
+.pno{background:rgba(59,130,246,.18);color:var(--blue)}.pba{background:rgba(90,122,154,.15);color:var(--muted)}
+
+/* ── PROGRESS ── */
+.prog{display:inline-flex;align-items:center;gap:5px}
+.pbar{width:72px;height:5px;background:var(--border2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+.pf{height:100%;border-radius:3px}.pf.r{background:var(--red)}.pf.y{background:var(--yellow)}.pf.b{background:var(--blue)}.pf.g{background:var(--green)}
+.pct{font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+/* ── PAGINACIÓN ── */
+.pag{display:flex;align-items:center;gap:5px;padding:11px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
+.pag-i{font-size:11px;color:var(--muted);margin-right:auto}
+.pb{padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.pb:hover:not(:disabled){color:var(--text);border-color:var(--blue)}.pb:disabled{opacity:.4;cursor:default}.pb.cur{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ── CONTROLES ── */
+.tctl{display:flex;gap:8px;padding:13px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.inp{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:7px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--blue)}.inp-s{flex:1;min-width:160px}
+.sel{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer}.sel:focus{border-color:var(--blue)}
+
+/* ── ÁRBOL JERÁRQUICO ── */
+.arbol-root{display:flex;flex-direction:column;gap:4px}
+.arbol-nodo{position:relative}
+.tree-card{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.tree-card:hover{border-color:var(--border2);background:rgba(255,255,255,.02)}
+.tree-card.nobj{border-left:3px solid var(--blue)}.tree-card.nact{border-left:3px solid var(--cyan)}
+.tree-card.ntar{border-left:3px solid var(--green)}.tree-card.nsub{border-left:3px solid var(--violet)}
+.tree-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.tree-nom{font-size:12px;font-weight:600;flex:1;line-height:1.35}
+.tree-id-txt{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.tree-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tree-pbar{width:60px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
+.tree-pfill{height:100%;border-radius:2px}
+.tree-toggle{background:none;border:1px solid var(--border2);border-radius:5px;color:var(--muted);width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;flex-shrink:0;transition:all .15s;line-height:1}
+.tree-toggle:hover{border-color:var(--blue);color:var(--blue)}
+.tree-hijos-cnt{font-size:10px;color:var(--muted);background:var(--bg2);padding:1px 7px;border-radius:10px;margin-left:2px}
+/* Hijos anidados */
+.tree-children{position:relative;margin-top:3px;padding-left:20px}
+.tree-children::before{content:'';position:absolute;left:9px;top:0;bottom:10px;width:1px;background:var(--border2)}
+.tree-child-item{position:relative;margin-bottom:3px}
+.tree-child-item::before{content:'';position:absolute;left:-11px;top:20px;width:11px;height:1px;background:var(--border2)}
+
+/* ── KANBAN ── */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px;overflow-x:auto}
+.k-col{background:var(--bg2);border:1px solid var(--border);border-radius:10px;min-height:160px}
+.k-hdr{padding:9px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
+.k-cnt{font-size:10px;background:var(--border2);padding:1px 7px;border-radius:10px;color:var(--muted)}
+.k-cards{padding:7px;display:flex;flex-direction:column;gap:6px}
+.k-card{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:9px 11px;cursor:grab;transition:box-shadow .2s,transform .15s}
+.k-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.4);transform:translateY(-1px)}.k-card:active{cursor:grabbing}.k-card.dragging{opacity:.4}
+.k-id{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px}
+.k-nom{font-size:11px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.k-foot{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.k-par{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+/* ── CARGA ── */
+.carga-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.cc{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.cc-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-bottom:9px}
+.cc-nom{font-size:13px;font-weight:600;margin-bottom:3px}.cc-sub{font-size:10px;color:var(--muted);margin-bottom:7px}
+.cc-bar{height:5px;background:var(--border2);border-radius:3px;margin-bottom:7px;overflow:hidden}
+.cc-bfill{height:100%;border-radius:3px;background:var(--blue)}
+.cc-chips{display:flex;gap:4px;flex-wrap:wrap}
+
+/* ── RINGS OBJETIVO ── */
+.rings-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.ring-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:all .15s}
+.ring-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.ring-w{position:relative;width:56px;height:56px;flex-shrink:0}
+.ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700}
+.ring-i{flex:1;min-width:0}.ring-nom{font-size:12px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ring-sub{font-size:10px;color:var(--muted)}.ring-chips{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.ring-chips .chip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+/* ── TIMELINE ── */
+.tl-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-info{width:150px;flex-shrink:0}
+.tl-nom{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-resp{font-size:10px;color:var(--muted)}
+.tl-bw{flex:1;height:14px;background:var(--bg2);border-radius:4px;position:relative;overflow:hidden}
+.tl-bf{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.tl-d{font-family:var(--mono);font-size:10px;color:var(--muted);width:55px;text-align:right;flex-shrink:0}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:700px;max-height:94vh;overflow-y:auto;animation:mIn .2s ease}
+@keyframes mIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:10}
+.mttl{font-size:14px;font-weight:700}
+.mcls{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;transition:color .15s;line-height:1}.mcls:hover{color:var(--text)}
+.mbody{padding:20px}.mfooter{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ff{display:flex;flex-direction:column;gap:4px}
+.ff label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ff .inp,.ff .sel,.ff textarea{width:100%}
+textarea.inp{resize:vertical;min-height:68px}.full{grid-column:span 2}
+.det-r{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.det-f label{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.det-v{font-size:13px}
+.cadena-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px}
+
+/* ── POPUP NOTIFICACIÓN ── */
+.popup{position:fixed;top:64px;right:18px;z-index:3000;width:370px;background:var(--card);border:1px solid var(--border2);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.7);overflow:hidden;display:none}
+.popup.show{display:block;animation:popIn .4s cubic-bezier(.16,1,.3,1)}
+.popup.hide{animation:popOut .3s ease forwards}
+@keyframes popIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes popOut{to{transform:translateX(110%);opacity:0}}
+.pop-hdr{padding:14px 16px;background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(245,158,11,.15));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.pop-ico{font-size:22px;animation:ring 1s ease 0s 3}
+@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+.pop-ttl{font-size:13px;font-weight:700;flex:1;color:var(--text)}
+.pop-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.pop-cls{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px;line-height:1}.pop-cls:hover{color:var(--text)}
+.pop-body{padding:12px 16px;max-height:330px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.pop-sec-ttl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 0 4px}
+.pop-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:border-color .15s}
+.pop-item:hover{border-color:var(--border2)}
+.pop-item-info{flex:1;min-width:0}
+.pop-item-nom{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pop-item-meta{font-size:10px;color:var(--muted)}
+.pop-item-dias{font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0}
+.pop-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.pop-time{font-size:10px;color:var(--muted)}
+
+/* ── BANNER ── */
+.bnr{display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:10px;margin-bottom:14px;font-size:12px;font-weight:500}
+.bnr.w{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);color:var(--red)}
+.bnr.i{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.22);color:var(--blue)}
+
+/* ── VIEWS ── */
+.view{display:none}.view.active{display:block}
+.fade{animation:fi .35s ease both}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.empty{text-align:center;padding:36px 20px;color:var(--muted)}.ei{font-size:38px;margin-bottom:10px}
+.vtog{display:flex;gap:5px}
+.vb{padding:5px 11px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.vb.act{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cfg-sec{margin-bottom:22px}.cfg-ttl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;right:22px;z-index:4000;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:fi .3s ease;pointer-events:none}
+
+/* ── INLINE DROPDOWN ── */
+.idd{position:fixed;z-index:6000;background:var(--card);border:1px solid var(--border2);border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.45);padding:5px;min-width:150px;animation:fi .15s ease}
+.idd-ttl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:5px 10px 4px}
+.idd-opt{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:background .1s}
+.idd-opt:hover{background:var(--bg2)}
+.idd-opt.cur{background:rgba(59,130,246,.12);color:var(--blue)}
+.idd-opt .idd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── CELL CLICKABLE ── */
+.cell-dd{cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:1px 4px;transition:background .15s}
+.cell-dd:hover{background:var(--bg2)}
+.cell-dd::after{content:'▾';font-size:9px;color:var(--muted);margin-left:1px}
+
+/* ── LINKS ── */
+.link-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none;transition:border-color .15s;white-space:nowrap}
+.link-chip:hover{border-color:var(--blue);background:rgba(59,130,246,.08)}
+.link-chip .li{font-size:13px;flex-shrink:0}
+.links-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+
+/* ── MULTI RESPONSABLE ── */
+.resp-tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500}
+.resp-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.resp-tags{display:flex;flex-wrap:wrap;gap:5px}
+
+/* ── FORM DYNAMIC ROWS ── */
+.dyn-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.dyn-row .inp{flex:1}
+.dyn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px dashed var(--border2);border-radius:7px;background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.dyn-add:hover{border-color:var(--blue);color:var(--blue)}
+.dyn-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:5px;transition:color .15s;line-height:1}
+.dyn-rm:hover{color:var(--red)}
+
+/* ── THEME TOGGLE ── */
+.theme-btn{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;user-select:none}
+.theme-btn:hover{border-color:var(--blue);color:var(--text)}
+.theme-track{width:32px;height:18px;border-radius:9px;background:var(--border2);position:relative;transition:background .3s;flex-shrink:0}
+body.light .theme-track{background:var(--blue)}
+.theme-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .3s,background .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+body.light .theme-thumb{transform:translateX(14px)}
+
+/* ── CAPACITY ── */
+
+/* ── URGENCY POPUP (1 hora) ── */
+.popup-urg{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:3500;width:420px;background:var(--card);border:2px solid var(--red);border-radius:14px;box-shadow:0 24px 64px rgba(239,68,68,.35);overflow:hidden;display:none}
+.popup-urg.show{display:block;animation:urgIn .4s cubic-bezier(.16,1,.3,1)}
+.popup-urg.hide{animation:urgOut .3s ease forwards}
+@keyframes urgIn{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+@keyframes urgOut{to{transform:translateX(-50%) scale(.85);opacity:0}}
+.pu-hdr{padding:14px 18px;background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(245,158,11,.18));border-bottom:1px solid rgba(239,68,68,.3);display:flex;align-items:center;gap:10px}
+.pu-alarm{font-size:26px;animation:shake .5s ease infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+.pu-ttl{font-size:13px;font-weight:800;color:var(--red);flex:1}
+.pu-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.pu-cls{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;line-height:1}
+.pu-cls:hover{color:var(--text)}
+.pu-body{padding:14px 18px;max-height:260px;overflow-y:auto}
+.pu-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background .15s}
+.pu-item:hover{background:rgba(239,68,68,.14)}
+.pu-item-nom{font-size:12px;font-weight:700;flex:1}
+.pu-item-time{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);white-space:nowrap}
+.pu-foot{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.pu-countdown{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red)}
+
+/* ── HORA BADGE EN TABLE ── */
+.hora-badge{display:inline-block;background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;font-family:var(--mono);margin-left:3px;animation:p 1.5s infinite}
+
+/* ── CELL EDITOR (fecha / links) ── */
+.cell-ed{position:fixed;z-index:6000;background:var(--card);border:1px solid var(--border2);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.55);padding:14px 16px;min-width:260px;animation:fi .15s ease}
+.ced-ttl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px}
+.ced-row{display:flex;gap:7px;align-items:center;margin-bottom:7px}
+.ced-row .inp{flex:1;font-size:12px}
+.ced-actions{display:flex;gap:7px;margin-top:10px;justify-content:flex-end}
+.ced-link-item{display:flex;align-items:center;gap:7px;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px}
+.ced-link-ico{font-size:14px;flex-shrink:0}
+.ced-link-info{flex:1;min-width:0}
+.ced-link-nom{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ced-link-url{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ced-add-form{background:var(--bg2);border:1px dashed var(--border2);border-radius:8px;padding:10px;margin-top:6px}
+.ced-add-ttl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:7px}
+.links-add-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font);font-weight:600;padding:2px 0;margin-top:4px}
+.links-add-btn:hover{text-decoration:underline}
+@media(max-width:1000px){.g2,.g31{grid-template-columns:1fr}.kpi-g{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.nav{width:56px}.nl-txt,.ni span:not(.ni-ic){display:none}.main{margin-left:56px}.fg{grid-template-columns:1fr}.full{grid-column:span 1}.alerta-grid{grid-template-columns:1fr}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g31{display:grid;grid-template-columns:3fr 1fr;gap:16px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<!-- ═══ POPUP NOTIFICACIÓN ═══ -->
+<div class="popup" id="popup">
+  <div class="pop-hdr">
+    <span class="pop-ico">🔔</span>
+    <div><div class="pop-ttl" id="pop-ttl">Alerta de Seguimiento</div><div class="pop-sub" id="pop-sub"></div></div>
+    <button class="pop-cls" onclick="cerrarPopup()">✕</button>
+  </div>
+  <div class="pop-body" id="pop-body"></div>
+  <div class="pop-footer">
+    <span class="pop-time" id="pop-time"></span>
+    <button class="btn bg bs" onclick="cerrarPopup();irVista('alertas')">Ver todas las alertas →</button>
+  </div>
+</div>
+
+<!-- ═══ INLINE DROPDOWN ═══ -->
+<div id="idd" class="idd" style="display:none" onclick="event.stopPropagation()"></div>
+
+<!-- ═══ CELL EDITOR (fechas / links) ═══ -->
+<div id="cell-ed" class="cell-ed" style="display:none" onclick="event.stopPropagation()"></div>
+
+<!-- ═══ POPUP URGENCIA 1 HORA ═══ -->
+<div class="popup-urg" id="popup-urg">
+  <div class="pu-hdr">
+    <span class="pu-alarm">⏰</span>
+    <div><div class="pu-ttl">¡ALERTA DE 1 HORA!</div><div class="pu-sub" id="pu-sub">Los siguientes elementos vencen en menos de 60 minutos</div></div>
+    <button class="pu-cls" onclick="cerrarUrgencia()">✕</button>
+  </div>
+  <div class="pu-body" id="pu-body"></div>
+  <div class="pu-foot">
+    <span class="pu-countdown" id="pu-countdown"></span>
+    <button class="btn bg bs" onclick="cerrarUrgencia();irVista('alertas')">Ver alertas →</button>
+  </div>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="nl">
+    <div class="nl-ico">🎯</div>
+    <div class="nl-txt">Gestor<br><span class="nl-sub">de Objetivos</span></div>
+  </div>
+  <div class="ni-wrap">
+    <button class="ni act" data-v="dashboard"><span class="ni-ic">📊</span><span>Dashboard</span></button>
+    <button class="ni" data-v="alertas"><span class="ni-ic">🚨</span><span>Alertas SLA</span><span class="ni-badge" id="nbadge">0</span></button>
+    <button class="ni" data-v="arbol"><span class="ni-ic">🌳</span><span>Árbol Jerárquico</span></button>
+    <button class="ni" data-v="gestor"><span class="ni-ic">📋</span><span>Gestión</span></button>
+    <button class="ni" data-v="carga"><span class="ni-ic">👥</span><span>Carga de Trabajo</span></button>
+    <div class="n-sep"></div>
+    <button class="ni" data-v="config"><span class="ni-ic">⚙️</span><span>Configuración</span></button>
+    <button class="ni" onclick="exportarCSV()"><span class="ni-ic">📥</span><span>Exportar CSV</span></button>
+  </div>
+  <div class="n-foot"><strong id="nav-empresa">Mi Empresa</strong>Sistema de Gestión v3</div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="topbar">
+    <div><div class="tb-ttl" id="tp-ttl">Dashboard</div><div class="tb-sub" id="tp-sub">Resumen ejecutivo</div></div>
+    <div class="tb-r">
+      <div class="clock" id="reloj">--:--</div>
+      <button class="theme-btn" onclick="toggleTema()" id="tema-btn" title="Cambiar tema">
+        <span id="tema-ico">☀️</span>
+        <div class="theme-track"><div class="theme-thumb"></div></div>
+        <span id="tema-lbl">Claro</span>
+      </button>
+      <button class="btn bg bs" onclick="exportarJSON()">💾 Backup</button>
+      <button id="notif-btn" class="btn bg bs" onclick="activarNotificaciones()" title="Activar notificaciones del sistema">🔔 Activar notif.</button>
+      <button class="btn bg bs" onclick="testUrgencia()" title="Probar alerta de urgencia y parpadeo de pestaña">🧪 Test Alerta</button>
+      <button class="btn bg bs" onclick="mostrarPopupAhora()">🔔 Test Popup</button>
+      <button class="btn bg bs" onclick="exportarPDF()" title="Descargar reporte PDF">📄 PDF</button>
+      <button class="btn bp" onclick="abrirNuevo()">➕ Nuevo Registro</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div id="banners"></div>
+      <div class="kpi-g">
+        <div class="kpi c1 fade" id="kpi-t" onclick="filtKPI('todos')"><div class="ki">🎯</div><div class="kv" id="kv-t">0</div><div class="kl">Total Registros</div></div>
+        <div class="kpi c2 fade" id="kpi-c" onclick="filtKPI('En Curso')"><div class="ki">⚡</div><div class="kv" id="kv-c">0</div><div class="kl">En Curso</div></div>
+        <div class="kpi c3 fade" id="kpi-o" onclick="filtKPI('Completado')"><div class="ki">✅</div><div class="kv" id="kv-o">0</div><div class="kl">Completados</div></div>
+        <div class="kpi c4 fade" id="kpi-p" onclick="filtKPI('En Pausa')"><div class="ki">⏸️</div><div class="kv" id="kv-p">0</div><div class="kl">En Pausa</div></div>
+        <div class="kpi c5 fade"><div class="ki">📊</div><div class="kv" id="kv-av">0%</div><div class="kl">Avance General</div></div>
+        <div class="kpi c6 fade" onclick="irVista('alertas')"><div class="ki">🚨</div><div class="kv" id="kv-v">0</div><div class="kl">Vencen ≤3 días</div></div>
+      </div>
+      <div class="card fade" style="margin-bottom:16px">
+        <div class="ch"><span class="ct">🎯 Progreso por Objetivo Estratégico</span></div>
+        <div class="cb"><div class="rings-g" id="rings"></div></div>
+      </div>
+      <div class="g31 fade">
+        <div>
+          <div class="g2">
+            <div class="card"><div class="ch"><span class="ct">Por Estado</span></div><div class="cb"><div style="position:relative;height:190px"><canvas id="ch1"></canvas></div></div></div>
+            <div class="card"><div class="ch"><span class="ct">Por Fase</span></div><div class="cb"><div style="position:relative;height:190px"><canvas id="ch2"></canvas></div></div></div>
+          </div>
+          <div class="card"><div class="ch"><span class="ct">⏳ Timeline — Elementos Activos</span></div><div class="cb" id="timeline"></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card"><div class="ch"><span class="ct">Por Nivel</span></div><div class="cb"><div style="position:relative;height:180px"><canvas id="ch3"></canvas></div></div></div>
+          <div class="card"><div class="ch"><span class="ct">🏆 Top Responsables</span></div><div class="cb" id="top-resp"></div></div>
+          <div class="card"><div class="ch"><span class="ct">🔴 Riesgo Inmediato</span></div><div class="cb" id="riesgo"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTAS SLA -->
+    <div class="view" id="view-alertas">
+      <div class="fade" style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--muted);padding:4px 0 12px">Haz clic en cualquier elemento para ver su detalle.</div>
+        <div class="alerta-grid" id="alerta-grid"></div>
+      </div>
+    </div>
+
+    <!-- ÁRBOL -->
+    <div class="view" id="view-arbol">
+      <div class="card fade">
+        <div class="ch">
+          <span class="ct">🌳 Árbol Jerárquico</span>
+          <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+            <button class="btn bg bs" onclick="setExpandAll(true)">⊞ Expandir todo</button>
+            <button class="btn bg bs" onclick="setExpandAll(false)">⊟ Contraer todo</button>
+            <button class="btn bp bs" onclick="abrirNuevo()">➕ Nuevo</button>
+          </div>
+        </div>
+        <div class="cb" id="arbol-body"></div>
+      </div>
+    </div>
+
+    <!-- GESTIÓN -->
+    <div class="view" id="view-gestor">
+      <div class="card fade">
+        <div class="ch">
+          <span class="ct">📋 Registros</span>
+          <div class="vtog" style="margin-left:auto">
+            <button class="vb act" id="vb-l" onclick="setVG('lista')">📋 Lista</button>
+            <button class="vb" id="vb-k" onclick="setVG('kanban')">🗂️ Kanban</button>
+          </div>
+        </div>
+        <div id="v-lista">
+          <div class="tctl">
+            <input class="inp inp-s" id="busq" placeholder="🔍 Buscar…" oninput="dBusq()"/>
+            <select class="sel" id="fn" onchange="renderT()"><option value="">Nivel</option><option>Objetivo</option><option>Actividad</option><option>Tarea</option><option>Subtarea</option></select>
+            <select class="sel" id="fe" onchange="renderT()"><option value="">Estado</option><option>No Iniciado</option><option>En Curso</option><option>En Pausa</option><option>Completado</option><option>Cancelado</option></select>
+            <select class="sel" id="fp" onchange="renderT()"><option value="">Prioridad</option><option>Muy Alta</option><option>Alta</option><option>Normal</option><option>Baja</option></select>
+            <select class="sel" id="frpp" onchange="cambRPP()"><option value="10">10/pág</option><option value="25">25/pág</option><option value="50">50/pág</option></select>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th onclick="ord('id')">ID</th><th onclick="ord('nivel')">Nivel</th><th onclick="ord('nombre')">Nombre</th><th>Cadena</th><th>Responsable(s)</th><th onclick="ord('fase')">Fase ▾</th><th onclick="ord('estado')">Estado ▾</th><th onclick="ord('prioridad')">Prioridad ▾</th><th>F. Inicio ✏️</th><th onclick="ord('fechaFin')">F. Fin ✏️</th><th>Días</th><th>Avance</th><th>🔗 Links ✏️</th><th>🚦</th><th>Acciones</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table></div>
+          <div class="pag" id="pag"></div>
+        </div>
+        <div id="v-kanban" style="display:none"><div class="kanban" id="kanban"></div></div>
+      </div>
+    </div>
+
+    <!-- CARGA -->
+    <div class="view" id="view-carga">
+      <div class="card fade"><div class="ch"><span class="ct">👥 Carga de Trabajo</span></div><div class="cb"><div class="carga-g" id="carga"></div></div></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="view" id="view-config">
+      <div class="card fade" style="max-width:540px">
+        <div class="ch"><span class="ct">⚙️ Configuración</span></div>
+        <div class="cb">
+          <div class="cfg-sec">
+            <div class="cfg-ttl">Empresa</div>
+            <div class="ff" style="margin-bottom:10px"><label>Nombre de la empresa</label><input class="inp" id="cfg-emp" placeholder="Mi Empresa S.A. de C.V."/></div>
+          </div>
+          <div class="cfg-sec">
+            <div class="cfg-ttl">Umbrales de Alerta</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="ff"><label>Días — Crítico</label><input class="inp" type="number" id="cfg-crit" value="3" min="1" max="30"/></div>
+              <div class="ff"><label>Días — Próximo</label><input class="inp" type="number" id="cfg-prox" value="7" min="1" max="60"/></div>
+            </div>
+          </div>
+          <div class="cfg-sec">
+            <div class="cfg-ttl">Notificaciones Popup</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">El sistema mostrará un popup automáticamente a las <strong style="color:var(--text)">8:00 AM</strong>, <strong style="color:var(--text)">12:00 PM</strong> y <strong style="color:var(--text)">4:00 PM</strong> cuando haya elementos vencidos o críticos. El popup se cierra solo a los 20 segundos.</p>
+            <button class="btn bg bs" onclick="mostrarPopupAhora()">🔔 Probar popup ahora</button>
+          </div>
+          <div class="cfg-sec">
+            <div class="cfg-ttl">Datos</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <button class="btn bg" onclick="exportarCSV()">📥 CSV</button>
+              <button class="btn bg" onclick="exportarJSON()">💾 JSON</button>
+              <button class="btn bg" onclick="document.getElementById('fimp').click()">📂 Importar JSON</button>
+              <input type="file" id="fimp" accept=".json" style="display:none" onchange="importarJSON(this)"/>
+            </div>
+            <button class="btn bd bs" onclick="borrarTodo()">🗑️ Borrar todo</button>
+          </div>
+          <button class="btn bp" onclick="guardarCfg()">💾 Guardar configuración</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FORM -->
+<div class="ov" id="ov-form">
+  <div class="modal">
+    <div class="mhdr"><span class="mttl" id="form-ttl">Nuevo Registro</span><button class="mcls" onclick="cerrar('ov-form')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="f-uid"/>
+      <div class="fg">
+        <div class="ff"><label>Nivel *</label><select class="sel" id="f-niv" onchange="onNiv()"><option>Objetivo</option><option>Actividad</option><option>Tarea</option><option>Subtarea</option></select></div>
+        <div class="ff"><label>ID (auto)</label><input class="inp" id="f-id" readonly style="color:var(--muted)"/></div>
+        <div class="ff full" id="f-padre-wrap" style="display:none">
+          <label id="f-padre-lbl">Objetivo padre</label>
+          <select class="sel" id="f-padre"><option value="">— Sin vincular —</option></select>
+        </div>
+        <div class="ff full"><label>Nombre *</label><input class="inp" id="f-nom" placeholder="Descripción del elemento"/></div>
+        <!-- RESPONSABLES -->
+        <div class="ff full">
+          <label>Responsables *</label>
+          <div id="resp-list"></div>
+          <button type="button" class="dyn-add" onclick="addResp()">＋ Agregar responsable</button>
+        </div>
+        <!-- LINKS -->
+        <div class="ff full">
+          <label>📎 Archivos / Links vinculados</label>
+          <div id="links-list"></div>
+          <button type="button" class="dyn-add" onclick="addLink()">＋ Agregar link</button>
+        </div>
+        <div class="ff"><label>Fase</label><select class="sel" id="f-fase"><option>Planeación</option><option>Desarrollo</option><option>Implementación</option><option>Validación</option><option>Liberación</option><option>Mantenimiento</option></select></div>
+        <div class="ff"><label>Estado</label><select class="sel" id="f-est"><option>No Iniciado</option><option>En Curso</option><option>En Pausa</option><option>Completado</option><option>Cancelado</option></select></div>
+        <div class="ff"><label>Prioridad</label><select class="sel" id="f-prio"><option>Muy Alta</option><option>Alta</option><option>Normal</option><option>Baja</option></select></div>
+        <div class="ff"><label>% Avance</label><input class="inp" type="number" id="f-av" min="0" max="100" placeholder="0"/></div>
+        <div class="ff"><label>Fecha Inicio</label><input class="inp" type="date" id="f-ini"/></div>
+        <div class="ff"><label>Fecha Fin ⏰</label><input class="inp" type="date" id="f-fin"/></div>
+        <div class="ff full"><label>Comentarios</label><textarea class="inp" id="f-com" placeholder="Observaciones, bloqueos…"></textarea></div>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn bg" onclick="cerrar('ov-form')">Cancelar</button>
+      <button class="btn bp" onclick="guardarReg()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="ov" id="ov-det">
+  <div class="modal">
+    <div class="mhdr"><span class="mttl" id="det-ttl">Detalle</span><button class="mcls" onclick="cerrar('ov-det')">✕</button></div>
+    <div class="mbody" id="det-body"></div>
+    <div class="mfooter">
+      <button class="btn bg" onclick="cerrar('ov-det')">Cerrar</button>
+      <button class="btn bd bs" id="det-del">🗑️ Eliminar</button>
+      <button class="btn bp bs" id="det-edit">✏️ Editar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ ESTADO ═══
+var DB=[], CFG={empresa:'Didcom — Área Legal',critico:3,proximo:7};
+var SEED_DATA=[{"uid":"leg79762591","id":"LEG-OBJ-01","nivel":"Objetivo","padreUID":null,"nombre":"60. Fortalecimiento del Gobierno Corporativo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-08-11","fechaFin":"","comentarios":"Legal | ObjetivosCortoPlazo","ultimaAct":"23/02/2026"},{"uid":"leg44857116","id":"LEG-ACT-01","nivel":"Actividad","padreUID":"leg79762591","nombre":"Diseño e Implementación de un Marco de Gobierno Corporativo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-08-11","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52951984","id":"LEG-TAR-01","nivel":"Tarea","padreUID":"leg44857116","nombre":"Revisión de fases del proyecto del Marco","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg56877577","id":"LEG-TAR-02","nivel":"Tarea","padreUID":"leg44857116","nombre":"Validación del Indice","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Validación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg56527850","id":"LEG-TAR-03","nivel":"Tarea","padreUID":"leg44857116","nombre":"Obtener aprobación de Dirección General","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Validación","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg59998395","id":"LEG-ACT-02","nivel":"Actividad","padreUID":"leg79762591","nombre":"Código de ética y conducta empresarial","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":65,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg67571758","id":"LEG-TAR-04","nivel":"Tarea","padreUID":"leg59998395","nombre":"Obtener aprobación de CH","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"En Curso","prioridad":"Alta","avance":70,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52608137","id":"LEG-TAR-05","nivel":"Tarea","padreUID":"leg59998395","nombre":"Analisis del codigo (Adecuarlo al Manual)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg38852805","id":"LEG-TAR-06","nivel":"Tarea","padreUID":"leg59998395","nombre":"Revision del Codigo adecuado al Manual con G.G","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg66580872","id":"LEG-TAR-07","nivel":"Tarea","padreUID":"leg59998395","nombre":"Revisar avance CH Codigo de Etica","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-15","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg18538549","id":"LEG-TAR-08","nivel":"Tarea","padreUID":"leg59998395","nombre":"Revisión final del codigo de etica (en espera de revisiones CH - Dirección General)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"En Curso","prioridad":"Alta","avance":80,"fechaInicio":"2025-11-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg82737805","id":"LEG-ACT-03","nivel":"Actividad","padreUID":"leg79762591","nombre":"Formación y Capacitación en Gobierno Corporativo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg82288574","id":"LEG-TAR-09","nivel":"Tarea","padreUID":"leg82737805","nombre":"Capacitación a Alta dirección","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg63711182","id":"LEG-SUB-01","nivel":"Subtarea","padreUID":"leg82288574","nombre":"Impartición del programa","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg50784394","id":"LEG-SUB-02","nivel":"Subtarea","padreUID":"leg82288574","nombre":"Evaluación y seguimiento","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg75846916","id":"LEG-TAR-10","nivel":"Tarea","padreUID":"leg82737805","nombre":"Capacitación a Alta Gerencia","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg74284021","id":"LEG-SUB-03","nivel":"Subtarea","padreUID":"leg75846916","nombre":"Impartición del programa","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg18151720","id":"LEG-SUB-04","nivel":"Subtarea","padreUID":"leg75846916","nombre":"Evaluación y seguimiento","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg71283772","id":"LEG-TAR-11","nivel":"Tarea","padreUID":"leg82737805","nombre":"Capacitación a colaboradores","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg29875773","id":"LEG-SUB-05","nivel":"Subtarea","padreUID":"leg71283772","nombre":"Impartición del programa","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg84817444","id":"LEG-SUB-06","nivel":"Subtarea","padreUID":"leg71283772","nombre":"Evaluación y seguimiento","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg19746701","id":"LEG-TAR-12","nivel":"Tarea","padreUID":"leg82737805","nombre":"Diseño del programa de capacitación (material)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg48179704","id":"LEG-TAR-13","nivel":"Tarea","padreUID":"leg82737805","nombre":"Selección de expertos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg49771084","id":"LEG-TAR-14","nivel":"Tarea","padreUID":"leg82737805","nombre":"Definición de capacitación/capacitador","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-09-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg22888712","id":"LEG-TAR-15","nivel":"Tarea","padreUID":"leg82737805","nombre":"Confirmación de inicio para la elaboración de formación y capacitación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-11-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg34022526","id":"LEG-OBJ-02","nivel":"Objetivo","padreUID":null,"nombre":"9. Valuación de Activos Intangibles","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":45,"fechaInicio":"","fechaFin":"","comentarios":"Legal | ObjetivosCortoPlazo","ultimaAct":"23/02/2026"},{"uid":"leg19876956","id":"LEG-ACT-04","nivel":"Actividad","padreUID":"leg34022526","nombre":"Contratación de Expertos en Valuación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg14159884","id":"LEG-ACT-05","nivel":"Actividad","padreUID":"leg34022526","nombre":"Incorporación de Activos Intangibles en los Estados Financieros","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg62627105","id":"LEG-TAR-16","nivel":"Tarea","padreUID":"leg14159884","nombre":"Confirmación del estado financiero","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg33489932","id":"LEG-TAR-17","nivel":"Tarea","padreUID":"leg14159884","nombre":"Revisar con Adm la forma de integrar la valuacion de intangibles (SESION)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg58023236","id":"LEG-ACT-06","nivel":"Actividad","padreUID":"leg34022526","nombre":"Elaboración de Inventario propiedad intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":55,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg19992818","id":"LEG-TAR-18","nivel":"Tarea","padreUID":"leg58023236","nombre":"YCC - Detallar las características, historial y uso de cada activo, potencial de generar valor","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg38582814","id":"LEG-TAR-19","nivel":"Tarea","padreUID":"leg58023236","nombre":"Agendar reunión con Lic Denisse para la elaboración de excel","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg27191800","id":"LEG-SUB-07","nivel":"Subtarea","padreUID":"leg38582814","nombre":"Lic Denisse reagendar sesion - Tentativa Miercoles 10am-11am","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg30711794","id":"LEG-TAR-20","nivel":"Tarea","padreUID":"leg58023236","nombre":"Completar el porcentaje de Proyección de cada marca","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-10-13","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg26244662","id":"LEG-TAR-21","nivel":"Tarea","padreUID":"leg34022526","nombre":"GTD - Detallar las características, historial y uso de cada activo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2026-01-12","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg16719648","id":"LEG-TAR-22","nivel":"Tarea","padreUID":"leg34022526","nombre":"Buscar proveedor (Stratego, Inntec, ROEH)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52385855","id":"LEG-TAR-23","nivel":"Tarea","padreUID":"leg34022526","nombre":"Selección de Metodologías de Valuación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg53705973","id":"LEG-TAR-24","nivel":"Tarea","padreUID":"leg34022526","nombre":"Identificación y Catalogación de Activos Intangibles","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg28576136","id":"LEG-TAR-25","nivel":"Tarea","padreUID":"leg34022526","nombre":"Elaboración de Informes de Valuación Detallados","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg14673112","id":"LEG-OBJ-03","nivel":"Objetivo","padreUID":null,"nombre":"8. Registro y Protección de Propiedad Intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-09-09","fechaFin":"","comentarios":"Legal | ObjetivosCortoPlazo","ultimaAct":"23/02/2026"},{"uid":"leg39274368","id":"LEG-ACT-07","nivel":"Actividad","padreUID":"leg14673112","nombre":"Registro Estratégico de Activos de Propiedad Intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":35,"fechaInicio":"2025-09-09","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg58680009","id":"LEG-TAR-26","nivel":"Tarea","padreUID":"leg39274368","nombre":"Programar sesiones","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg85810233","id":"LEG-SUB-08","nivel":"Subtarea","padreUID":"leg58680009","nombre":"Marketing","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg66258539","id":"LEG-SUB-09","nivel":"Subtarea","padreUID":"leg58680009","nombre":"Software","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg87423847","id":"LEG-SUB-10","nivel":"Subtarea","padreUID":"leg58680009","nombre":"Manufactura Avanzada","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg82360198","id":"LEG-TAR-27","nivel":"Tarea","padreUID":"leg39274368","nombre":"Revisar modelo de utilidad y que modelos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg89863106","id":"LEG-TAR-28","nivel":"Tarea","padreUID":"leg39274368","nombre":"Revisar que diseños industriales tiene Didcom","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg24863065","id":"LEG-TAR-29","nivel":"Tarea","padreUID":"leg39274368","nombre":"Revisar que tipo de propiedad intelectual se registrará internacionalmente","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":20,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg53980474","id":"LEG-ACT-08","nivel":"Actividad","padreUID":"leg14673112","nombre":"Desarrollo de Estrategias de Gestión y Comercialización de la Propiedad Intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-09-09","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg70549250","id":"LEG-TAR-30","nivel":"Tarea","padreUID":"leg53980474","nombre":"Desarrollar clausulado de Didcom Innovation Hub","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-11-28","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg77723139","id":"LEG-ACT-09","nivel":"Actividad","padreUID":"leg14673112","nombre":"Capacitación Integral del Personal en Propiedad Intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":35,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg16607376","id":"LEG-TAR-31","nivel":"Tarea","padreUID":"leg77723139","nombre":"Desarrollo de contenido protección de propiedad intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg41387617","id":"LEG-TAR-32","nivel":"Tarea","padreUID":"leg16607376","nombre":"Diferentes tipos de activos protegibles","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76373987","id":"LEG-TAR-33","nivel":"Tarea","padreUID":"leg41387617","nombre":"Desarrollo de guia de activos intangibles","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg71046042","id":"LEG-SUB-11","nivel":"Subtarea","padreUID":"leg76373987","nombre":"Planificación de la guia Cronograma","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg27949960","id":"LEG-TAR-34","nivel":"Tarea","padreUID":"leg16607376","nombre":"Indice autorizado","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg65649900","id":"LEG-TAR-35","nivel":"Tarea","padreUID":"leg77723139","nombre":"Diseño e Implementación de un Sistema de Gestión de la Propiedad Intelectual (PI)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg49989526","id":"LEG-TAR-36","nivel":"Tarea","padreUID":"leg65649900","nombre":"Revisar con Eva si se seguirá en Macro o se llevará a SIAD","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg18479016","id":"LEG-SUB-12","nivel":"Subtarea","padreUID":"leg49989526","nombre":"Avance del modulo de proyectos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-29","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg91788831","id":"LEG-TAR-37","nivel":"Tarea","padreUID":"leg65649900","nombre":"Diagrama de flujo de registro de Propiedad intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg14561402","id":"LEG-TAR-38","nivel":"Tarea","padreUID":"leg77723139","nombre":"Analizar los exceles de Liil","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg59150080","id":"LEG-SUB-13","nivel":"Subtarea","padreUID":"leg14561402","nombre":"Consultar los exceles de Liil","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-11-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg17983254","id":"LEG-TAR-39","nivel":"Tarea","padreUID":"leg77723139","nombre":"Comite Riesgo y Cumplimiento","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"En Curso","prioridad":"Alta","avance":10,"fechaInicio":"2026-02-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg71024523","id":"LEG-OBJ-04","nivel":"Objetivo","padreUID":null,"nombre":"44. Cumplimiento y Vigilancia Legal Proactiva","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"","fechaFin":"","comentarios":"Legal | ObjetivosCortoPlazo","ultimaAct":"23/02/2026"},{"uid":"leg38733467","id":"LEG-ACT-10","nivel":"Actividad","padreUID":"leg71024523","nombre":"Definir tareas entre Capital Humano y Legal","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg88685821","id":"LEG-TAR-40","nivel":"Tarea","padreUID":"leg38733467","nombre":"Pasar listado de comisiones mixtas","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-15","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg86366481","id":"LEG-SUB-14","nivel":"Subtarea","padreUID":"leg88685821","nombre":"Sesiones programadas con Capital Humano","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-30","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg43071437","id":"LEG-TAR-41","nivel":"Tarea","padreUID":"leg38733467","nombre":"Sesion de capacitacion Jueves 23 de Octubre con Stratego","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg68363769","id":"LEG-SUB-15","nivel":"Subtarea","padreUID":"leg43071437","nombre":"Solicitar actas de ratificación a Stratego","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-27","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76619451","id":"LEG-TAR-42","nivel":"Tarea","padreUID":"leg38733467","nombre":"Entrega completa de tareas: comisiones mixtas","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg69017146","id":"LEG-TAR-43","nivel":"Tarea","padreUID":"leg38733467","nombre":"Revisar módulo de proyectos para aplicarlo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg27576537","id":"LEG-ACT-11","nivel":"Actividad","padreUID":"leg71024523","nombre":"Llenar Macro para indicadores","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg11097888","id":"LEG-TAR-44","nivel":"Tarea","padreUID":"leg27576537","nombre":"Permisos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-29","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg88524105","id":"LEG-SUB-16","nivel":"Subtarea","padreUID":"leg11097888","nombre":"Asignar condicionantes en cada permiso","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-06","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg20842394","id":"LEG-TAR-45","nivel":"Tarea","padreUID":"leg27576537","nombre":"Contratos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-29","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg62171241","id":"LEG-TAR-46","nivel":"Tarea","padreUID":"leg27576537","nombre":"Propiedad intelectual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-29","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg22845336","id":"LEG-TAR-47","nivel":"Tarea","padreUID":"leg27576537","nombre":"Agregar alerta para 10 días de anticipación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg58559711","id":"LEG-OBJ-05","nivel":"Objetivo","padreUID":null,"nombre":"Actividades Operativas Legal (sin objetivo estratégico)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"","fechaFin":"","comentarios":"Gerencia General Didcom - Lista de actividades operativas","ultimaAct":"23/02/2026"},{"uid":"leg43928296","id":"LEG-ACT-12","nivel":"Actividad","padreUID":"leg58559711","nombre":"Consejo administrativo sesion 16 de Diciembre","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-24","fechaFin":"2025-12-16","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg49425015","id":"LEG-TAR-48","nivel":"Tarea","padreUID":"leg43928296","nombre":"Definicion de orden del día","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg82634238","id":"LEG-ACT-13","nivel":"Actividad","padreUID":"leg58559711","nombre":"Modulo de SIAD de contratos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76315193","id":"LEG-TAR-49","nivel":"Tarea","padreUID":"leg82634238","nombre":"Seguimiento 14 de noviembre con tecnología","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg45954517","id":"LEG-TAR-50","nivel":"Tarea","padreUID":"leg82634238","nombre":"Presentacion modulo de contratos a áreas involucradas (producción, comercial…)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-22","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg14220369","id":"LEG-ACT-14","nivel":"Actividad","padreUID":"leg58559711","nombre":"Capacitaciones sobre confidencialidad uso de datos personales","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg58836114","id":"LEG-TAR-51","nivel":"Tarea","padreUID":"leg14220369","nombre":"Definir la estructura de la capacitación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76048880","id":"LEG-SUB-17","nivel":"Subtarea","padreUID":"leg58836114","nombre":"Analisis para revisar la documentación que falta para poder realizar la capacitación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-27","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg89235400","id":"LEG-TAR-52","nivel":"Tarea","padreUID":"leg14220369","nombre":"Desarrollar el contenido","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg65530272","id":"LEG-TAR-53","nivel":"Tarea","padreUID":"leg14220369","nombre":"19 de Enero sesion de revision","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg57008128","id":"LEG-ACT-15","nivel":"Actividad","padreUID":"leg58559711","nombre":"Vinculacion al C5","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Pausa","prioridad":"Alta","avance":20,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52182333","id":"LEG-TAR-54","nivel":"Tarea","padreUID":"leg57008128","nombre":"Desarrollar boton de panico virtual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Pausa","prioridad":"Alta","avance":15,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg30460959","id":"LEG-TAR-55","nivel":"Tarea","padreUID":"leg57008128","nombre":"Desarrollo del requerimiento final sobre boton fisico","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Pausa","prioridad":"Alta","avance":10,"fechaInicio":"2025-11-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg27515012","id":"LEG-ACT-16","nivel":"Actividad","padreUID":"leg58559711","nombre":"LEGAL registro de marca Didcom Onvox","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"2025-09-23","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg31980229","id":"LEG-TAR-56","nivel":"Tarea","padreUID":"leg27515012","nombre":"Modificacion de la identidad del Logo - Marketing","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg30003208","id":"LEG-TAR-57","nivel":"Tarea","padreUID":"leg27515012","nombre":"Registro de la Marca - Legal (Jonas)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-09-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg90403217","id":"LEG-ACT-17","nivel":"Actividad","padreUID":"leg58559711","nombre":"Bodega Facturas y pagos","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":70,"fechaInicio":"2025-10-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg10448702","id":"LEG-TAR-58","nivel":"Tarea","padreUID":"leg90403217","nombre":"Cambio de nombre del contrato de agua","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-27","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg69820331","id":"LEG-SUB-18","nivel":"Subtarea","padreUID":"leg10448702","nombre":"Pago adeudo actual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-27","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg29317725","id":"LEG-TAR-59","nivel":"Tarea","padreUID":"leg90403217","nombre":"Cambio de nombre de recibo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-11-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg30847669","id":"LEG-ACT-18","nivel":"Actividad","padreUID":"leg58559711","nombre":"Poderes Representatición SAPI","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":70,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg26276329","id":"LEG-TAR-60","nivel":"Tarea","padreUID":"leg30847669","nombre":"Elaboracion del acta de sesion de consejo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg65275015","id":"LEG-TAR-61","nivel":"Tarea","padreUID":"leg30847669","nombre":"Firma del acta","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg83304393","id":"LEG-TAR-62","nivel":"Tarea","padreUID":"leg30847669","nombre":"Protocolizacion del acta ante notario publico","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":30,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg13316606","id":"LEG-TAR-63","nivel":"Tarea","padreUID":"leg30847669","nombre":"Revision con Lic Denisse acta de sesion de consejo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg44038978","id":"LEG-TAR-64","nivel":"Tarea","padreUID":"leg30847669","nombre":"Primera Sesion de Consejo de Administración","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-15","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76821820","id":"LEG-ACT-19","nivel":"Actividad","padreUID":"leg58559711","nombre":"Holding nuevas empresas","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg22229680","id":"LEG-TAR-65","nivel":"Tarea","padreUID":"leg76821820","nombre":"Autorizaciones de denominaciones de 4 empresas","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg66501389","id":"LEG-SUB-19","nivel":"Subtarea","padreUID":"leg22229680","nombre":"Revisión con Gerencia General sobre el rechazo de las 2 Holding","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-15","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg21144830","id":"LEG-SUB-20","nivel":"Subtarea","padreUID":"leg22229680","nombre":"DIDCOM OPERATIONS -SYSTEMS","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2026-01-12","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg81566459","id":"LEG-TAR-66","nivel":"Tarea","padreUID":"leg76821820","nombre":"Elaboracion de 4 actas constitutivas de cada empresa","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":40,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg75207997","id":"LEG-TAR-67","nivel":"Tarea","padreUID":"leg76821820","nombre":"Modelar la forma de coexistir de las empresas del holding","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Desarrollo","estado":"En Curso","prioridad":"Alta","avance":50,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg80263336","id":"LEG-ACT-20","nivel":"Actividad","padreUID":"leg58559711","nombre":"Order Now | Didcom LLC - Fase 1","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-07-28","fechaFin":"","comentarios":"6/6 completado","ultimaAct":"23/02/2026"},{"uid":"leg40071383","id":"LEG-TAR-68","nivel":"Tarea","padreUID":"leg80263336","nombre":"Revisar End User Agreement","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-08-29","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg13867486","id":"LEG-TAR-69","nivel":"Tarea","padreUID":"leg80263336","nombre":"Enviar Hardware de muestra (3/3)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-08-26","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg18896209","id":"LEG-TAR-70","nivel":"Tarea","padreUID":"leg80263336","nombre":"Add-in's para Order Now - TPM+","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-08-08","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg31864865","id":"LEG-SUB-21","nivel":"Subtarea","padreUID":"leg18896209","nombre":"Definición del proceso de Cancelación de Servicio de Order Now (5/5)","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg74863863","id":"LEG-SUB-22","nivel":"Subtarea","padreUID":"leg18896209","nombre":"Add-in TPM+","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-08-08","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg21531691","id":"LEG-TAR-71","nivel":"Tarea","padreUID":"leg80263336","nombre":"Actualización de la documentación","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg10305040","id":"LEG-TAR-72","nivel":"Tarea","padreUID":"leg80263336","nombre":"Recursos de mkt para onboarding","responsables":[{"nombre":"AR","correo":""}],"responsable":"AR","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-10","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg16302344","id":"LEG-SUB-23","nivel":"Subtarea","padreUID":"leg10305040","nombre":"Coordinar sesión con Elsa Mtz","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-10","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg11655266","id":"LEG-TAR-73","nivel":"Tarea","padreUID":"leg80263336","nombre":"Implementation Guide, User Guides y FAQs","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-10","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg57213201","id":"LEG-SUB-24","nivel":"Subtarea","padreUID":"leg11655266","nombre":"Subir FAQs a Excel","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-09-25","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg82083693","id":"LEG-TAR-74","nivel":"Tarea","padreUID":"leg80263336","nombre":"Installation Guidebook","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-09","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg15465859","id":"LEG-TAR-75","nivel":"Tarea","padreUID":"leg80263336","nombre":"Fulfillment Process","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-10-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg89576157","id":"LEG-TAR-76","nivel":"Tarea","padreUID":"leg80263336","nombre":"Cómo se visualiza en MyAdmin?","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Validación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-11-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52455177","id":"LEG-TAR-77","nivel":"Tarea","padreUID":"leg80263336","nombre":"Presentación de avances","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg76603187","id":"LEG-TAR-78","nivel":"Tarea","padreUID":"leg80263336","nombre":"Tablero de Conciliación de facturas","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"En Curso","prioridad":"Alta","avance":60,"fechaInicio":"2025-12-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg35861691","id":"LEG-TAR-79","nivel":"Tarea","padreUID":"leg80263336","nombre":"Capacitación a los involucrados","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Liberación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg58100463","id":"LEG-TAR-80","nivel":"Tarea","padreUID":"leg80263336","nombre":"Definir lo del ingreso Mensual","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Implementación","estado":"Completado","prioridad":"Alta","avance":100,"fechaInicio":"2025-12-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg62478417","id":"LEG-ACT-21","nivel":"Actividad","padreUID":"leg58559711","nombre":"Beneficiario Controlador","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-01-20","fechaFin":"","comentarios":"https://adfabogadosycontadores.org","ultimaAct":"23/02/2026"},{"uid":"leg14292214","id":"LEG-TAR-81","nivel":"Tarea","padreUID":"leg62478417","nombre":"Analizar obligación y crear plan","responsables":[{"nombre":"DM","correo":""}],"responsable":"DM","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-01-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg33289729","id":"LEG-TAR-82","nivel":"Tarea","padreUID":"leg62478417","nombre":"Realizar registro","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-01-20","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg80044241","id":"LEG-ACT-22","nivel":"Actividad","padreUID":"leg58559711","nombre":"PERMISOS BODEGA 9C","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-11-07","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg79929084","id":"LEG-TAR-83","nivel":"Tarea","padreUID":"leg80044241","nombre":"Listado de Permisos bodega 9C","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-11-19","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg74924557","id":"LEG-TAR-84","nivel":"Tarea","padreUID":"leg80044241","nombre":"Dictamen de verificación de instalacion electrica 9C","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-12-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg47394450","id":"LEG-TAR-85","nivel":"Tarea","padreUID":"leg80044241","nombre":"Ratificacion Uso de suelo","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg13815397","id":"LEG-SUB-25","nivel":"Subtarea","padreUID":"leg47394450","nombre":"Contratos de arrendamiento 9A 9B","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg30272145","id":"LEG-SUB-26","nivel":"Subtarea","padreUID":"leg47394450","nombre":"Presentacion de Tramite","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-11-24","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg52686161","id":"LEG-TAR-86","nivel":"Tarea","padreUID":"leg80044241","nombre":"Conseguir cotización","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2025-12-01","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg11443467","id":"LEG-TAR-87","nivel":"Tarea","padreUID":"leg80044241","nombre":"Aprobacion de cotizacion por Gerencia General","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-02-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg16557860","id":"LEG-TAR-88","nivel":"Tarea","padreUID":"leg80044241","nombre":"Proyecto eléctrico terminado","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-02-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"},{"uid":"leg73487524","id":"LEG-TAR-89","nivel":"Tarea","padreUID":"leg80044241","nombre":"Dictamen de verificación A,B,C","responsables":[{"nombre":"EA","correo":""}],"responsable":"EA","correo":"","links":[],"fase":"Planeación","estado":"No Iniciado","prioridad":"Alta","avance":0,"fechaInicio":"2026-02-03","fechaFin":"","comentarios":"","ultimaAct":"23/02/2026"}];
+var vistaActual='dashboard', vistaG='lista';
+var sortCol=null, sortDir='asc', pag=1, rpp=10, kpiFilt='';
+var cnt={OBJ:0,ACT:0,TAR:0,SUB:0}, charts={};
+var expandidos={}, dTimer=null, popupT=null;
+var HORAS_POPUP=[8,12,16], popVistos={};
+
+// ═══ INIT ═══
+window.addEventListener('DOMContentLoaded',function(){
+  cargarDatos(); cargarCfg();
+  // Cargar tema guardado
+  if(localStorage.getItem('gob3tema')==='light') aplicarTema('light');
+  else aplicarTema('dark');
+  reloj(); setInterval(reloj,1000);
+  document.querySelectorAll('.ni[data-v]').forEach(function(b){
+    b.addEventListener('click',function(){irVista(this.dataset.v);});
+  });
+  document.querySelectorAll('.ov').forEach(function(o){
+    o.addEventListener('click',function(e){if(e.target===this)cerrar(this.id);});
+  });
+  actuTodo();
+  setInterval(verificarHoraPopup, 30000);
+  setTimeout(verificarHoraPopup, 2000);
+  // Urgencia 1-hora: verificar cada 60 segundos
+  setInterval(verificarUrgencia, 60000);
+  setTimeout(verificarUrgencia, 3000);
+  initNotificaciones();
+});
+
+// ═══ TEMA CLARO / OSCURO ═══
+function toggleTema(){
+  var esLight=document.body.classList.contains('light');
+  aplicarTema(esLight?'dark':'light');
+}
+function aplicarTema(tema){
+  var esLight=(tema==='light');
+  // Deshabilitar transiciones temporalmente para evitar parpadeo en init
+  document.body.style.transition='none';
+  document.body.classList.toggle('light',esLight);
+  // Re-habilitar después del paint
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      document.body.style.transition='';
+    });
+  });
+  document.getElementById('tema-ico').textContent=esLight?'🌙':'☀️';
+  document.getElementById('tema-lbl').textContent=esLight?'Oscuro':'Claro';
+  try{localStorage.setItem('gob3tema',tema);}catch(e){}
+  // Redibujar gráficas con colores del nuevo tema
+  Object.keys(charts).forEach(function(k){if(charts[k] instanceof Chart){charts[k].destroy();charts[k]=null;}});
+  setTimeout(function(){ if(vistaActual==='dashboard') renderDash(); },50);
+}
+
+// ═══ RELOJ ═══
+function reloj(){
+  var d=new Date(),h=d.getHours(),m=d.getMinutes(),s=d.getSeconds();
+  var h12=h%12||12,am=h>=12?'PM':'AM';
+  document.getElementById('reloj').textContent=(h12<10?'0'+h12:h12)+':'+(m<10?'0'+m:m)+' '+am;
+}
+
+// ═══ POPUP HORARIO ═══
+function verificarHoraPopup(){
+  var d=new Date(),h=d.getHours(),m=d.getMinutes();
+  var clave=d.toDateString()+'-'+h;
+  if(m>2||HORAS_POPUP.indexOf(h)===-1||popVistos[clave]) return;
+  var alts=getAlertasActivas();
+  if(!alts.length) return;
+  popVistos[clave]=true;
+  mostrarPopup(alts,h);
+}
+
+function getAlertasActivas(){
+  return DB.filter(function(d){var t=ta(d);return t==='v'||t==='c'||t==='p';})
+    .sort(function(a,b){return (diasR(a.fechaFin)||9999)-(diasR(b.fechaFin)||9999);});
+}
+
+function mostrarPopupAhora(){
+  var alts=getAlertasActivas();
+  if(!alts.length){toast('✅ Sin elementos críticos o próximos a vencer.');return;}
+  mostrarPopup(alts,new Date().getHours());
+}
+
+function mostrarPopup(alts,h){
+  var el=document.getElementById('popup');
+  var h12=h%12||12,am=h>=12?'PM':'AM';
+  var hStr=(h12<10?'0'+h12:h12)+':00 '+am;
+  document.getElementById('pop-sub').textContent='Revisión programada — '+hStr;
+  document.getElementById('pop-time').textContent='Sistema de Gestión · '+hStr;
+
+  var venc=alts.filter(function(d){return ta(d)==='v';});
+  var crit=alts.filter(function(d){return ta(d)==='c';});
+  var prox=alts.filter(function(d){return ta(d)==='p';});
+
+  var ttl=venc.length?'⚠️ Tienes '+venc.length+' elemento(s) VENCIDO(S)':
+    crit.length?'🔔 '+crit.length+' elemento(s) requieren atención urgente':
+    '📅 '+prox.length+' elemento(s) próximos a vencer';
+  document.getElementById('pop-ttl').textContent=ttl;
+
+  var html='';
+  if(venc.length){
+    html+='<div class="pop-sec-ttl" style="color:var(--red)">🔴 VENCIDOS</div>';
+    html+=venc.map(function(d){return popItemH(d,'var(--red)');}).join('');
+  }
+  if(crit.length){
+    html+='<div class="pop-sec-ttl" style="color:var(--yellow)">🟡 CRÍTICOS (≤'+CFG.critico+' días)</div>';
+    html+=crit.map(function(d){return popItemH(d,'var(--yellow)');}).join('');
+  }
+  if(prox.length){
+    html+='<div class="pop-sec-ttl" style="color:var(--orange)">🟠 PRÓXIMOS (≤'+CFG.proximo+' días)</div>';
+    html+=prox.slice(0,4).map(function(d){return popItemH(d,'var(--orange)');}).join('');
+    if(prox.length>4) html+='<div style="font-size:10px;color:var(--muted);padding:6px 0">...y '+(prox.length-4)+' más</div>';
+  }
+  document.getElementById('pop-body').innerHTML=html;
+
+  el.className='popup show';
+  clearTimeout(popupT);
+  popupT=setTimeout(cerrarPopup,20000);
+  enviarNotifRevision(venc.length, crit.length, prox.length);
+  var resumen=venc.length?'🔴 '+venc.length+' VENCIDO'+(venc.length>1?'S':''):
+    crit.length?'🟡 '+crit.length+' CRÍTICO'+(crit.length>1?'S':''):
+    '🟠 '+prox.length+' PRÓXIMO'+(prox.length>1?'S':'');
+  flashTitulo(resumen);
+  setTimeout(detenerFlashTitulo, 15000);
+}
+
+function popItemH(d,color){
+  var di=diasR(d.fechaFin);
+  var diaTxt=di!==null?(di<0?'Hace '+Math.abs(di)+'d':di+'d rest.'):'Sin fecha';
+  return '<div class="pop-item" onclick="cerrarPopup();abrirDetalle(\''+d.uid+'\')">'
+    +'<span class="dot '+(ta(d)==='v'?'dv':ta(d)==='c'?'dc':'dp')+'"></span>'
+    +'<div class="pop-item-info">'
+    +'<div class="pop-item-nom">'+d.nombre+'</div>'
+    +'<div class="pop-item-meta">'+d.id+' · '+d.responsable+'</div>'
+    +'</div>'
+    +'<div class="pop-item-dias" style="color:'+color+'">'+diaTxt+'</div>'
+    +'</div>';
+}
+
+function cerrarPopup(){
+  detenerFlashTitulo();
+  clearTimeout(popupT);
+  detenerFlashTitulo();
+  var el=document.getElementById('popup');
+  el.classList.add('hide');
+  setTimeout(function(){el.className='popup';},320);
+}
+
+// ═══ URGENCIA 1 HORA ═══
+var urgVistos={}, urgT=null, urgCountT=null;
+
+function verificarUrgencia(){
+  var ahora=new Date();
+  var criticos=DB.filter(function(d){
+    if(d.estado==='Completado'||d.estado==='Cancelado') return false;
+    if(!d.fechaFin||d.fechaFin.length<=10) return false;
+    var min=minutosR(d.fechaFin);
+    return min!==null && min>=0 && min<=60;
+  });
+  if(!criticos.length) return;
+
+  var clave=ahora.toDateString()+'-'+ahora.getHours()+'-'+Math.floor(ahora.getMinutes()/10);
+  var nuevos=criticos.filter(function(d){return !urgVistos[d.uid+clave];});
+  if(!nuevos.length) return;
+  nuevos.forEach(function(d){urgVistos[d.uid+clave]=true;});
+  mostrarUrgencia(nuevos);
+  enviarNotifUrgencia(nuevos);
+  var nom=nuevos[0].nombre.length>30?nuevos[0].nombre.substring(0,28)+'…':nuevos[0].nombre;
+  flashTitulo('⏰ URGENTE — '+nom);
+}
+
+function mostrarUrgencia(items){
+  var el=document.getElementById('popup-urg');
+  document.getElementById('pu-body').innerHTML=items.map(function(d){
+    var min=minutosR(d.fechaFin);
+    var tStr=min<=0?'VENCIDO':min<=5?min+' min':Math.round(min/6)/10+'h';
+    var resps=d.responsables&&d.responsables.length?d.responsables.map(function(r){return r.nombre;}).join(', '):d.responsable||'—';
+    return'<div class="pu-item" onclick="cerrarUrgencia();abrirDetalle(\''+d.uid+'\')">'
+      +'<span class="dot dv"></span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="pu-item-nom">'+d.nombre+'</div>'
+      +'<div style="font-size:10px;color:var(--muted)">'+d.id+' · '+resps+'</div>'
+      +'</div>'
+      +'<div class="pu-item-time">⏰ '+tStr+'</div>'
+      +'</div>';
+  }).join('');
+  el.className='popup-urg show';
+  actualizarCuentaRegresiva(items);
+  clearTimeout(urgT);
+  urgT=setTimeout(cerrarUrgencia,30000);
+}
+
+function actualizarCuentaRegresiva(items){
+  clearInterval(urgCountT);
+  urgCountT=setInterval(function(){
+    var el=document.getElementById('pu-countdown');
+    if(!el||!document.getElementById('popup-urg').classList.contains('show')){clearInterval(urgCountT);return;}
+    var mins=items.map(function(d){return minutosR(d.fechaFin);}).filter(function(m){return m!==null&&m>=0;});
+    if(!mins.length){el.textContent='⛔ Elemento(s) vencido(s)';return;}
+    var m=Math.min.apply(null,mins);
+    el.textContent='⏱ Más urgente: '+Math.floor(m)+'m '+Math.round((m%1)*60)+'s';
+  },1000);
+}
+
+function cerrarUrgencia(){
+  detenerFlashTitulo();
+  clearTimeout(urgT); clearInterval(urgCountT);
+  detenerFlashTitulo();
+  var el=document.getElementById('popup-urg');
+  el.classList.add('hide');
+  setTimeout(function(){el.className='popup-urg';},320);
+}
+
+// ═══ PARPADEO DE TÍTULO DE PESTAÑA ═══
+var _titleFlashInterval=null;
+var _originalTitle='Gestor de Objetivos — Legal';
+
+function flashTitulo(mensaje){
+  if(_titleFlashInterval) return;
+  var alterno=false;
+  _titleFlashInterval=setInterval(function(){
+    document.title=alterno?_originalTitle:mensaje;
+    alterno=!alterno;
+  },1200);
+}
+
+function detenerFlashTitulo(){
+  if(_titleFlashInterval){clearInterval(_titleFlashInterval);_titleFlashInterval=null;}
+  document.title=_originalTitle;
+}
+
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden) detenerFlashTitulo();
+});
+
+// ═══ NOTIFICACIONES DEL SISTEMA ═══
+function initNotificaciones(){
+  var btn=document.getElementById('notif-btn');
+  if(!('Notification' in window)){
+    if(btn){btn.textContent='🔕 Sin soporte';btn.disabled=true;}
+    return;
+  }
+  if(Notification.permission==='default'){
+    Notification.requestPermission().then(function(result){
+      actualizarBtnNotif();
+      if(result==='granted') toast('✅ Notificaciones del sistema activadas');
+    });
+  }
+  actualizarBtnNotif();
+}
+
+function actualizarBtnNotif(){
+  var btn=document.getElementById('notif-btn'); if(!btn) return;
+  var p=Notification.permission;
+  if(p==='granted'){
+    btn.textContent='🔔 Notif. ON';
+    btn.style.color='var(--green)';
+    btn.style.borderColor='var(--green)';
+    btn.title='Notificaciones activas. Clic para probar.';
+  } else if(p==='denied'){
+    btn.textContent='🔕 Bloqueadas';
+    btn.style.color='var(--red)';
+    btn.title='Bloqueadas en el navegador. Ve a Configuración del sitio para activarlas.';
+  } else {
+    btn.textContent='🔔 Activar notif.';
+    btn.style.color='var(--blue)';
+  }
+}
+
+function activarNotificaciones(){
+  if(!('Notification' in window)){toast('⚠️ Tu navegador no soporta notificaciones');return;}
+  if(Notification.permission==='granted'){
+    try{
+      var n=new Notification('🧪 Gestor Legal — Test OK',{
+        body:'Las notificaciones están activas.\nAparecerán aquí cuando estés en otra pestaña.',
+        tag:'gob3-test',requireInteraction:false
+      });
+      setTimeout(function(){n.close();},5000);
+    }catch(e){}
+    toast('✅ Notificaciones activas');
+    return;
+  }
+  if(Notification.permission==='denied'){
+    toast('🔕 Bloqueadas. Haz clic en el candado de la URL → Notificaciones → Permitir');
+    return;
+  }
+  Notification.requestPermission().then(function(result){
+    actualizarBtnNotif();
+    if(result==='granted'){
+      enviarNotifSistema('✅ Notificaciones activadas','A partir de ahora recibirás alertas aunque estés en otra pestaña.',null);
+      toast('✅ Notificaciones del sistema activadas');
+    } else {
+      toast('⚠️ Permiso denegado. Puedes activarlo desde la configuración del navegador.');
+    }
+  });
+}
+
+function enviarNotifSistema(titulo, cuerpo, uid){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  try{
+    var tag=(uid||'gob3')+'-'+Date.now();
+    var n=new Notification(titulo,{
+      body:cuerpo,
+      icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231B2A4A"/><text y="46" x="12" font-size="40">📋</text></svg>',
+      tag:tag,requireInteraction:false,silent:false
+    });
+    n.onclick=function(){
+      window.focus(); n.close();
+      if(uid){setTimeout(function(){abrirDetalle(uid);},300);}
+    };
+    setTimeout(function(){try{n.close();}catch(e){}},15000);
+  }catch(e){}
+}
+
+function enviarNotifUrgencia(items){
+  if(!items||!items.length) return;
+  if(items.length===1){
+    var d=items[0];
+    var min=minutosR(d.fechaFin);
+    var tStr=min<=0?'¡YA VENCIÓ!':min+'min restantes';
+    enviarNotifSistema('⏰ URGENTE — '+tStr, d.nombre+'\n'+d.id, d.uid);
+  } else {
+    var nombres=items.slice(0,3).map(function(d){return '• '+d.nombre;}).join('\n');
+    if(items.length>3) nombres+='\n...y '+(items.length-3)+' más';
+    enviarNotifSistema('⏰ '+items.length+' elementos vencen en ≤ 60 min', nombres, null);
+  }
+}
+
+function enviarNotifRevision(venc, crit, prox){
+  var total=venc+crit+prox; if(!total) return;
+  var partes=[];
+  if(venc) partes.push(venc+' vencido'+(venc>1?'s':''));
+  if(crit) partes.push(crit+' crítico'+(crit>1?'s':''));
+  if(prox) partes.push(prox+' próximo'+(prox>1?'s':''));
+  enviarNotifSistema('📋 Revisión — '+total+' requieren atención', partes.join(' · ')+'\nAbre el Gestor para ver el detalle.', null);
+}
+
+// ═══ TEST DE ALERTA ═══
+function testUrgencia(){
+  var fakeUID='test-'+Date.now();
+  var ahora=new Date();
+  var ff=new Date(ahora.getTime()+5*60000);
+  var pad=function(n){return n<10?'0'+n:n;};
+  var ffStr=ff.getFullYear()+'-'+pad(ff.getMonth()+1)+'-'+pad(ff.getDate())+'T'+pad(ff.getHours())+':'+pad(ff.getMinutes());
+  var fakeItem={uid:fakeUID,id:'TEST-01',nombre:'🧪 Prueba de alerta — registro ficticio',nivel:'Tarea',estado:'En Curso',prioridad:'Muy Alta',fechaFin:ffStr,responsable:'Test',responsables:[{nombre:'Test',correo:''}],avance:50};
+  mostrarUrgencia([fakeItem]);
+  enviarNotifUrgencia([fakeItem]);
+  var nom='🧪 Prueba de alerta';
+  flashTitulo('⏰ URGENTE — '+nom);
+  setTimeout(detenerFlashTitulo, 15000);
+  toast('🧪 Alerta de prueba disparada — cambia de pestaña para ver el título parpadear');
+}
+
+// ═══ CAPACIDAD DEL SISTEMA ═══
+
+// ═══ PERSISTENCIA ═══
+// ═══ BACKEND API — datos viajan cifrados, keys nunca en el navegador ═══
+function guardarDatos(){
+  // Respaldo local
+  try{localStorage.setItem('gob3',JSON.stringify(DB));}catch(e){}
+  // Guardar en backend (Vercel → Firebase)
+  fetch('/api/registros',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({registros:DB})
+  }).catch(function(e){console.warn('Backend guardar:',e);});
+}
+
+function cargarDatos(){
+  var VERSION='legal-v1';
+  fetch('/api/registros')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.registros && data.registros.length){
+        DB=data.registros;
+        recalcCnt();
+        actuTodo();
+        toast('☁️ Datos cargados desde la nube');
+      } else {
+        // Backend vacío — cargar SEED_DATA y subirlo
+        DB=JSON.parse(JSON.stringify(SEED_DATA));
+        recalcCnt();
+        actuTodo();
+        guardarDatos();
+        toast('✅ Datos iniciales cargados');
+      }
+    })
+    .catch(function(){
+      // Sin conexión al backend — usar localStorage o SEED_DATA
+      _cargarLocal(VERSION);
+    });
+}
+
+function _cargarLocal(VERSION){
+  try{
+    if(localStorage.getItem('gob3ver')===VERSION){
+      var s=localStorage.getItem('gob3');
+      if(s){DB=JSON.parse(s);recalcCnt();return;}
+    }
+    DB=JSON.parse(JSON.stringify(SEED_DATA));
+    localStorage.setItem('gob3ver',VERSION);
+    try{localStorage.setItem('gob3',JSON.stringify(DB));}catch(e){}
+    recalcCnt();
+  }catch(e){
+    DB=JSON.parse(JSON.stringify(SEED_DATA));
+    recalcCnt();
+  }
+}
+function guardarCfg(){
+  CFG.empresa=document.getElementById('cfg-emp').value.trim()||'Mi Empresa';
+  CFG.critico=parseInt(document.getElementById('cfg-crit').value)||3;
+  CFG.proximo=parseInt(document.getElementById('cfg-prox').value)||7;
+  try{localStorage.setItem('gob3cfg',JSON.stringify(CFG));}catch(e){}
+  document.getElementById('nav-empresa').textContent=CFG.empresa;
+  toast('✅ Configuración guardada'); actuTodo();
+}
+function cargarCfg(){
+  try{var s=localStorage.getItem('gob3cfg');if(s)CFG=Object.assign(CFG,JSON.parse(s));}catch(e){}
+  document.getElementById('cfg-emp').value=CFG.empresa;
+  document.getElementById('cfg-crit').value=CFG.critico;
+  document.getElementById('cfg-prox').value=CFG.proximo;
+  document.getElementById('nav-empresa').textContent=CFG.empresa;
+}
+function recalcCnt(){
+  cnt={OBJ:0,ACT:0,TAR:0,SUB:0};
+  DB.forEach(function(d){var p={Objetivo:'OBJ',Actividad:'ACT',Tarea:'TAR',Subtarea:'SUB'}[d.nivel]||'OBJ';var n=parseInt(String(d.id).replace(/^LEG-/,'').replace(/\D/g,''))||0;if(n>cnt[p])cnt[p]=n;});
+}
+
+// ═══ NAV ═══
+var VISTAS={dashboard:['Dashboard','Resumen ejecutivo'],alertas:['Alertas SLA','Vencidos · Críticos · Próximos · Al Día'],arbol:['Árbol Jerárquico','Estructura completa de objetivos'],gestor:['Gestión','Administración de registros'],carga:['Carga de Trabajo','Distribución por responsable'],config:['Configuración','Ajustes del sistema']};
+function irVista(v){
+  vistaActual=v;
+  document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.ni[data-v]').forEach(function(b){b.classList.remove('act');});
+  var nb=document.querySelector('.ni[data-v="'+v+'"]');if(nb)nb.classList.add('act');
+  var inf=VISTAS[v]||[v,''];
+  document.getElementById('tp-ttl').textContent=inf[0];
+  document.getElementById('tp-sub').textContent=inf[1];
+  if(v==='dashboard')renderDash();
+  if(v==='alertas')renderAlertas();
+  if(v==='arbol')renderArbol();
+  if(v==='gestor'){pag=1;renderT();if(vistaG==='kanban')renderK();}
+  if(v==='carga')renderCarga();
+}
+
+// ═══ HELPERS ═══
+function diasR(f){
+  if(!f)return null;
+  var now=new Date();now.setHours(0,0,0,0);
+  // Supports both 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:MM'
+  var target=f.length>10?new Date(f):new Date(f+'T00:00:00');
+  target.setHours(0,0,0,0);
+  return Math.floor((target-now)/86400000);
+}
+function minutosR(f){
+  // Returns minutes remaining until fechaFin (with time). Negative = past.
+  if(!f||f.length<=10)return null;
+  return Math.floor((new Date(f)-new Date())/60000);
+}
+function ta(d){if(d.estado==='Completado'||d.estado==='Cancelado')return'o';var di=diasR(d.fechaFin);if(di===null)return'o';if(di<0)return'v';if(di<=CFG.critico)return'c';if(di<=CFG.proximo)return'p';return'o';}
+function dotH(t){var cls={v:'dv',c:'dc',p:'dp',o:'do'};return'<span class="dot '+(cls[t]||'do')+'"></span>';}
+function getCadena(d){var c=[d],cur=d,i=0;while(cur.padreUID&&i<10){var p=DB.find(function(x){return x.uid===cur.padreUID;});if(!p)break;c.unshift(p);cur=p;i++;}return c;}
+function cadenaH(d){return getCadena(d).map(function(x){return'<span class="chip '+nC(x.nivel)+'" style="font-size:9px">'+x.id+'</span>';}).join('<span style="color:var(--muted);font-size:9px;margin:0 2px">→</span>');}
+function getHijos(uid){return DB.filter(function(d){return d.padreUID===uid;});}
+function getDesc(uid){var r=[];getHijos(uid).forEach(function(c){r.push(c);r=r.concat(getDesc(c.uid));});return r;}
+
+// Auto-calcula avance: nodos hoja = manual; padres = promedio de hijos
+function avanceCalc(uid){
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return 0;
+  var hijos=getHijos(d.uid);
+  if(!hijos.length) return d.avance||0;
+  var sum=0; hijos.forEach(function(h){sum+=avanceCalc(h.uid);});
+  return Math.round(sum/hijos.length);
+}
+function nC(v){return{Objetivo:'cobj',Actividad:'cact',Tarea:'ctar',Subtarea:'csub'}[v]||'csub';}
+function chipN(v){return'<span class="chip '+nC(v)+'">'+v+'</span>';}
+function chipE(v){var m={'No Iniciado':'ni_','En Curso':'ec_','En Pausa':'ep_','Completado':'co_','Cancelado':'ca_'};return'<span class="chip '+(m[v]||'ni_')+'">'+v+'</span>';}
+function chipP(v){var m={'Muy Alta':'pma','Alta':'pal','Normal':'pno','Baja':'pba'};return'<span class="chip '+(m[v]||'pno')+'">'+v+'</span>';}
+function barH(av){if(av===null||av===undefined)return'—';var c=av<=30?'r':av<=60?'y':av<=90?'b':'g';return'<div class="prog"><div class="pbar"><div class="pf '+c+'" style="width:'+av+'%"></div></div><span class="pct">'+av+'%</span></div>';}
+
+// ── LINK ICON ──
+function linkIcon(url){
+  var u=(url||'').toLowerCase();
+  if(u.indexOf('docs.google.com/spreadsheets')>=0) return'📊';
+  if(u.indexOf('docs.google.com/document')>=0)     return'📝';
+  if(u.indexOf('docs.google.com/presentation')>=0) return'📑';
+  if(u.indexOf('docs.google.com/forms')>=0)        return'📋';
+  if(u.indexOf('drive.google.com')>=0)             return'📁';
+  if(u.indexOf('notion.so')>=0)                    return'🗒️';
+  if(u.indexOf('figma.com')>=0)                    return'🎨';
+  if(u.indexOf('github.com')>=0)                   return'🐙';
+  if(u.indexOf('trello.com')>=0)                   return'📌';
+  if(u.indexOf('slack.com')>=0)                    return'💬';
+  if(u.indexOf('youtube.com')>=0||u.indexOf('youtu.be')>=0) return'▶️';
+  return'🔗';
+}
+
+function linksHTML(links){
+  if(!links||!links.length) return'';
+  return'<div class="links-row">'
+    +links.map(function(l){
+      if(!l.url) return'';
+      return'<a class="link-chip" href="'+l.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="'+l.url+'">'
+        +'<span class="li">'+linkIcon(l.url)+'</span>'
+        +(l.nombre||'Link')
+        +'</a>';
+    }).join('')
+    +'</div>';
+}
+
+function respHTML(responsables){
+  if(!responsables||!responsables.length) return'<span style="color:var(--muted);font-size:11px">—</span>';
+  return'<div class="resp-tags">'
+    +responsables.map(function(r){
+      var ini=(r.nombre||'?').split(' ').map(function(p){return p[0]||'';}).slice(0,2).join('').toUpperCase();
+      return'<div class="resp-tag">'
+        +'<div class="resp-av">'+ini+'</div>'
+        +'<span style="font-size:11px">'+(r.nombre||'')+'</span>'
+        +(r.correo?'<a href="mailto:'+r.correo+'" onclick="event.stopPropagation()" style="color:var(--muted);font-size:10px;text-decoration:none" title="'+r.correo+'">✉️</a>':'')
+        +'</div>';
+    }).join('')
+    +'</div>';
+}
+
+// ── INLINE DROPDOWN ──
+var IDD_OPTS={
+  estado:['No Iniciado','En Curso','En Pausa','Completado','Cancelado'],
+  fase:['Planeación','Desarrollo','Implementación','Validación','Liberación','Mantenimiento'],
+  prioridad:['Muy Alta','Alta','Normal','Baja']
+};
+var IDD_COLORS={
+  'No Iniciado':'#5A7A9A','En Curso':'#3B82F6','En Pausa':'#F59E0B','Completado':'#10B981','Cancelado':'#EF4444',
+  'Muy Alta':'#EF4444','Alta':'#F97316','Normal':'#3B82F6','Baja':'#5A7A9A',
+  'Planeación':'#8B5CF6','Desarrollo':'#06B6D4','Implementación':'#3B82F6','Validación':'#F59E0B','Liberación':'#10B981','Mantenimiento':'#5A7A9A'
+};
+var iddOpen=null;
+
+// Delegación de eventos — un solo listener en tbody maneja todo
+function bindDDCells(){
+  var tb=document.getElementById('tbody');
+  if(!tb) return;
+  // Siempre remover y re-agregar para evitar acumulación
+  tb.removeEventListener('click', tbodyClickHandler);
+  tb.addEventListener('click', tbodyClickHandler);
+}
+
+function tbodyClickHandler(e){
+  // 1. Si hicieron click dentro del dropdown abierto → ignorar (el dropdown lo maneja)
+  if(e.target.closest('#idd')) return;
+  if(e.target.closest('#cell-ed')) return;
+
+  // 2. Si hicieron click en una celda dropdown (estado/fase/prioridad)
+  var ddCell = e.target.closest('.dd-cell');
+  if(ddCell){
+    cerrarCellEd();
+    cerrarIDD();
+    var uid = ddCell.dataset.uid;
+    var campo = ddCell.dataset.campo;
+    var actual = ddCell.dataset.val;
+    showIDD(uid, campo, actual, ddCell, e);
+    return;
+  }
+
+  // 3. Si hicieron click en celda de fecha
+  var dateCell = e.target.closest('.date-cell');
+  if(dateCell){
+    cerrarIDD();
+    cerrarCellEd();
+    showDateEditor(dateCell.dataset.uid, dateCell.dataset.campo, dateCell);
+    return;
+  }
+
+  // 4. Si hicieron click en celda de links (o en el botón ＋)
+  var linksCell = e.target.closest('.links-cell');
+  if(linksCell){
+    cerrarIDD();
+    cerrarCellEd();
+    showLinksEditor(linksCell.dataset.uid, linksCell);
+    return;
+  }
+
+  // 5. Si hicieron click en un link-chip → dejar que navegue (no abrir detalle)
+  if(e.target.closest('.link-chip')) return;
+
+  // 6. Si hicieron click en botón de acción (✏️ 🗑️)
+  if(e.target.closest('.dd-cell-stop')) return;
+
+  // 7. Cualquier otro click en la fila → abrir detalle
+  var row = e.target.closest('.tbl-row');
+  if(row && row.dataset.uid){
+    abrirDetalle(row.dataset.uid);
+  }
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#idd')&&!e.target.closest('.dd-cell')) cerrarIDD();
+  if(!e.target.closest('#cell-ed')&&!e.target.closest('.date-cell')&&!e.target.closest('.links-cell')) cerrarCellEd();
+});
+
+function cerrarCellEd(){
+  var el=document.getElementById('cell-ed');
+  if(el) el.style.display='none';
+}
+
+function posicionarPanel(el, anchor){
+  el.style.display='block';
+  var rect=anchor.getBoundingClientRect();
+  var pw=el.offsetWidth||280, ph=el.offsetHeight||200;
+  var left=rect.left, top=rect.bottom+6;
+  if(left+pw>window.innerWidth-10) left=window.innerWidth-pw-10;
+  if(top+ph>window.innerHeight-10) top=rect.top-ph-6;
+  el.style.left=Math.max(4,left)+'px';
+  el.style.top=Math.max(4,top)+'px';
+}
+
+function cerrarIDD(){
+  var el=document.getElementById('idd');
+  if(el) el.style.display='none';
+  iddOpen=null;
+}
+
+function showIDD(uid, campo, actual, anchorEl, e){
+  if(iddOpen&&iddOpen.uid===uid&&iddOpen.campo===campo){ cerrarIDD(); return; }
+  var el=document.getElementById('idd');
+  var ttlMap={estado:'Estado',fase:'Fase',prioridad:'Prioridad'};
+  var opciones=IDD_OPTS[campo]||[];
+
+  el.innerHTML='<div class="idd-ttl">'+ttlMap[campo]+'</div>'
+    +opciones.map(function(op){
+      return'<div class="idd-opt'+(op===actual?' cur':'')+'" data-uid="'+uid+'" data-campo="'+campo+'" data-valor="'+op+'">'
+        +'<div class="idd-dot" style="background:'+(IDD_COLORS[op]||'#5A7A9A')+'"></div>'
+        +op+'</div>';
+    }).join('');
+
+  // Posicionar relativo al elemento ancla
+  el.style.display='block';
+  var rect=anchorEl.getBoundingClientRect();
+  var ddW=el.offsetWidth||170, ddH=el.offsetHeight||220;
+  var left=rect.left, top=rect.bottom+4;
+  if(left+ddW>window.innerWidth-10) left=window.innerWidth-ddW-10;
+  if(top+ddH>window.innerHeight-10) top=rect.top-ddH-4;
+  el.style.left=Math.max(4,left)+'px';
+  el.style.top=Math.max(4,top)+'px';
+  iddOpen={uid:uid,campo:campo};
+}
+
+// Click dentro del dropdown — seleccionar opción
+document.getElementById('idd').addEventListener('click',function(e){
+  var opt=e.target.closest('.idd-opt');
+  if(!opt) return;
+  e.stopPropagation();
+  updateCampo(opt.dataset.uid, opt.dataset.campo, opt.dataset.valor);
+});
+
+function updateCampo(uid, campo, valor){
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return;
+  d[campo]=valor;
+  d.ultimaAct=new Date().toLocaleDateString('es-MX');
+  guardarDatos();
+  cerrarIDD();
+  actuTodo();
+  toast('✅ '+campo.charAt(0).toUpperCase()+campo.slice(1)+': '+valor);
+}
+
+// ── CELL EDITOR: FECHA ──
+function showDateEditor(uid, campo, anchor){
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return;
+  var ttl=campo==='fechaFin'?'📅 Fecha Fin':'📅 Fecha Inicio';
+  var val=d[campo]||'';
+  // Normalise to date-only (YYYY-MM-DD) for the picker
+  var dtVal=val.length>=10?val.substring(0,10):'';
+  var el=document.getElementById('cell-ed');
+  el.innerHTML=
+    '<div class="ced-ttl">'+ttl+'</div>'
+    +'<input id="ced-dt" class="inp" type="date" value="'+dtVal+'" style="width:100%;font-size:12px"/>'
+    +'<div style="display:flex;gap:6px;margin-top:8px;justify-content:space-between;align-items:center">'
+    +'<button class="btn bg bx" onclick="updateCampo(\''+uid+'\',\''+campo+'\',\'\');cerrarCellEd();" style="color:var(--muted)">Quitar fecha</button>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button class="btn bg bx" onclick="cerrarCellEd()">Cancelar</button>'
+    +'<button class="btn bp bx" onclick="saveDateEd(\''+uid+'\',\''+campo+'\')">✔ Guardar</button>'
+    +'</div></div>';
+  posicionarPanel(el, anchor);
+  setTimeout(function(){ var inp=document.getElementById('ced-dt');if(inp)inp.focus(); },50);
+}
+
+function saveDateEd(uid, campo){
+  var inp=document.getElementById('ced-dt');
+  if(!inp) return;
+  var val=inp.value;  // type=date always gives YYYY-MM-DD or ''
+  updateCampo(uid, campo, val);
+  cerrarCellEd();
+}
+
+// ── CELL EDITOR: LINKS ──
+function showLinksEditor(uid, anchor){
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return;
+  var links=d.links&&d.links.length?d.links.slice():[];
+  renderLinksEdPanel(uid, links, anchor);
+}
+
+function renderLinksEdPanel(uid, links, anchor){
+  var el=document.getElementById('cell-ed');
+  var itemsH=links.length
+    ? links.map(function(l,i){
+        return'<div class="ced-link-item">'
+          +'<span class="ced-link-ico">'+linkIcon(l.url)+'</span>'
+          +'<div class="ced-link-info">'
+          +'<div class="ced-link-nom">'+escH(l.nombre||'Sin nombre')+'</div>'
+          +'<div class="ced-link-url">'+escH(l.url)+'</div>'
+          +'</div>'
+          +'<a href="'+l.url+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--blue);font-size:11px;text-decoration:none;margin-right:4px">↗</a>'
+          +'<button class="dyn-rm" onclick="removeLinkInline(\''+uid+'\','+i+',event)">✕</button>'
+          +'</div>';
+      }).join('')
+    : '<div style="font-size:11px;color:var(--muted);padding:4px 0">Sin links. Agrega uno abajo.</div>';
+
+  el.innerHTML=
+    '<div class="ced-ttl">🔗 Links vinculados</div>'
+    +'<div id="ced-link-items">'+itemsH+'</div>'
+    +'<div class="ced-add-form">'
+    +'<div class="ced-add-ttl">＋ Agregar link</div>'
+    +'<div class="ced-row"><span style="font-size:16px" id="ced-link-ico-prev">🔗</span>'
+    +'<input class="inp" id="ced-link-url" placeholder="https://..." oninput="updCedLinkIco(this.value)" style="flex:1"/></div>'
+    +'<div class="ced-row"><input class="inp" id="ced-link-nom" placeholder="Nombre del archivo (ej: Plan Q1)" style="flex:1"/></div>'
+    +'<div style="display:flex;gap:6px;justify-content:flex-end">'
+    +'<button class="btn bg bx" onclick="cerrarCellEd()">Cerrar</button>'
+    +'<button class="btn bp bx" onclick="addLinkInline(\''+uid+'\',event)">＋ Agregar</button>'
+    +'</div></div>';
+
+  // Store anchor reference for re-render
+  el._linkAnchor=anchor;
+  el._linkUid=uid;
+  posicionarPanel(el, anchor);
+}
+
+function updCedLinkIco(url){
+  var ico=document.getElementById('ced-link-ico-prev');
+  if(ico) ico.textContent=linkIcon(url);
+}
+
+function addLinkInline(uid, e){
+  e.stopPropagation();
+  var urlInp=document.getElementById('ced-link-url');
+  var nomInp=document.getElementById('ced-link-nom');
+  var url=(urlInp&&urlInp.value.trim())||'';
+  var nom=(nomInp&&nomInp.value.trim())||'';
+  if(!url){toast('⚠️ Ingresa una URL.');return;}
+  // Add https:// if missing
+  if(url&&!url.match(/^https?:\/\//)) url='https://'+url;
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return;
+  if(!d.links) d.links=[];
+  d.links.push({nombre:nom||url,url:url});
+  d.ultimaAct=new Date().toLocaleDateString('es-MX');
+  guardarDatos();
+  // Re-render panel in place
+  var anchor=document.getElementById('cell-ed')._linkAnchor;
+  renderLinksEdPanel(uid, d.links, anchor);
+  actuTodo();
+  toast('✅ Link agregado');
+}
+
+function removeLinkInline(uid, idx, e){
+  e.stopPropagation();
+  var d=DB.find(function(x){return x.uid===uid;}); if(!d) return;
+  if(!d.links) return;
+  d.links.splice(idx,1);
+  d.ultimaAct=new Date().toLocaleDateString('es-MX');
+  guardarDatos();
+  var anchor=document.getElementById('cell-ed')._linkAnchor;
+  renderLinksEdPanel(uid, d.links, anchor);
+  actuTodo();
+  toast('🗑️ Link eliminado');
+}
+
+// ── FORM DINÁMICA — RESPONSABLES ──
+function renderRespList(){
+  var d=window._formResp||[{nombre:'',correo:''}];
+  document.getElementById('resp-list').innerHTML=d.map(function(r,i){
+    return'<div class="dyn-row">'
+      +'<input class="inp" placeholder="Nombre completo *" value="'+escH(r.nombre)+'" oninput="updResp('+i+',\'nombre\',this.value)" style="flex:1.5"/>'
+      +'<input class="inp" type="email" placeholder="correo@empresa.com" value="'+escH(r.correo)+'" oninput="updResp('+i+',\'correo\',this.value)" style="flex:1"/>'
+      +(d.length>1?'<button class="dyn-rm" onclick="removeResp('+i+')" title="Quitar">✕</button>':'')
+      +'</div>';
+  }).join('');
+}
+function addResp(){ window._formResp=window._formResp||[{nombre:'',correo:''}]; window._formResp.push({nombre:'',correo:''}); renderRespList(); }
+function removeResp(i){ window._formResp.splice(i,1); renderRespList(); }
+function updResp(i,k,v){ window._formResp=window._formResp||[]; if(window._formResp[i]) window._formResp[i][k]=v; }
+
+// ── FORM DINÁMICA — LINKS ──
+function renderLinksList(){
+  var d=window._formLinks||[];
+  document.getElementById('links-list').innerHTML=d.map(function(l,i){
+    return'<div class="dyn-row">'
+      +'<span style="font-size:16px;flex-shrink:0">'+linkIcon(l.url)+'</span>'
+      +'<input class="inp" placeholder="Nombre del archivo" value="'+escH(l.nombre)+'" oninput="updLink('+i+',\'nombre\',this.value)" style="flex:1"/>'
+      +'<input class="inp" placeholder="https://..." value="'+escH(l.url)+'" oninput="updLink('+i+',\'url\',this.value);updLinkIcon('+i+')" style="flex:2"/>'
+      +'<button class="dyn-rm" onclick="removeLink('+i+')" title="Quitar">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function addLink(){ window._formLinks=window._formLinks||[]; window._formLinks.push({nombre:'',url:''}); renderLinksList(); }
+function removeLink(i){ window._formLinks.splice(i,1); renderLinksList(); }
+function updLink(i,k,v){ window._formLinks=window._formLinks||[]; if(window._formLinks[i]) window._formLinks[i][k]=v; }
+function updLinkIcon(i){ renderLinksList(); }
+function escH(s){ return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ═══ DASHBOARD ═══
+function renderDash(){
+  var t=DB.length,ec=0,co=0,pa=0,ve=0,sumAv=0,cAv=0;
+  var pE={},pF={},pN={};
+  DB.forEach(function(d){
+    if(d.estado==='En Curso')ec++;if(d.estado==='Completado')co++;if(d.estado==='En Pausa')pa++;
+    var di=diasR(d.fechaFin);if(d.estado!=='Completado'&&d.estado!=='Cancelado'&&di!==null&&di<=CFG.critico)ve++;
+    if(typeof d.avance==='number'){sumAv+=d.avance;cAv++;}
+    if(d.estado)pE[d.estado]=(pE[d.estado]||0)+1;if(d.fase)pF[d.fase]=(pF[d.fase]||0)+1;if(d.nivel)pN[d.nivel]=(pN[d.nivel]||0)+1;
+  });
+  var avG=cAv>0?Math.round(sumAv/cAv):0;
+  ['kv-t,'+t,'kv-c,'+ec,'kv-o,'+co,'kv-p,'+pa,'kv-v,'+ve].forEach(function(s){var p=s.split(',');animN(p[0],parseInt(p[1]));});
+  document.getElementById('kv-av').textContent=avG+'%';
+  document.getElementById('kv-v').style.color=ve>0?'var(--red)':'var(--text)';
+  // Badge
+  var nA=DB.filter(function(d){var t=ta(d);return t==='v'||t==='c';}).length;
+  var nb=document.getElementById('nbadge');nb.style.display=nA?'':'none';nb.textContent=nA;
+  // Banner
+  var venc=DB.filter(function(d){return ta(d)==='v';});
+  document.getElementById('banners').innerHTML=venc.length?'<div class="bnr w">⚠️ <strong>'+venc.length+' elemento(s) VENCIDO(S).</strong> <a href="#" onclick="irVista(\'alertas\');return false;" style="color:var(--red);font-weight:700;margin-left:6px">Ver alertas →</a></div>':'';
+  mkC('ch1','doughnut',Object.keys(pE),Object.values(pE),['#3B82F6','#10B981','#F59E0B','#EF4444','#5A7A9A']);
+  mkC('ch2','bar',Object.keys(pF),Object.values(pF),['#06B6D4']);
+  mkC('ch3','doughnut',Object.keys(pN),Object.values(pN),['#3B82F6','#06B6D4','#10B981','#8B5CF6']);
+  renderRings(); renderTimeline(); renderRiesgo(); renderTopResp();
+}
+
+function renderRings(){
+  var objs=DB.filter(function(d){return d.nivel==='Objetivo';});
+  var el=document.getElementById('rings');
+  if(!objs.length){el.innerHTML='<div class="empty"><div class="ei">🎯</div>No hay objetivos. Usa ➕ Nuevo Registro.</div>';return;}
+  el.innerHTML=objs.map(function(o){
+    var h=getDesc(o.uid),all=[o].concat(h),s=0,c=0;
+    all.forEach(function(d){if(typeof d.avance==='number'){s+=d.avance;c++;}});
+    var av=c>0?Math.round(s/c):0;
+    var col=av>=80?'#10B981':av>=50?'#3B82F6':av>=25?'#F59E0B':'#EF4444';
+    var act=h.filter(function(d){return d.estado==='En Curso';}).length;
+    return'<div class="ring-card" onclick="abrirDetalle(\''+o.uid+'\')">'
+      +'<div class="ring-w"><canvas id="ring-'+o.uid+'" width="56" height="56"></canvas>'
+      +'<div class="ring-pct" style="color:'+col+'">'+av+'%</div></div>'
+      +'<div class="ring-i"><div class="ring-nom" title="'+o.nombre+'">'+o.nombre+'</div>'
+      +'<div class="ring-sub">'+dotH(ta(o))+' '+h.length+' elem · '+act+' activos</div>'
+      +'<div class="ring-chips">'+chipE(o.estado)+' '+chipP(o.prioridad)+'</div>'
+      +'</div></div>';
+  }).join('');
+  objs.forEach(function(o){
+    var h=getDesc(o.uid),all=[o].concat(h),s=0,c=0;
+    all.forEach(function(d){if(typeof d.avance==='number'){s+=d.avance;c++;}});
+    var av=c>0?Math.round(s/c):0;
+    var col=av>=80?'#10B981':av>=50?'#3B82F6':av>=25?'#F59E0B':'#EF4444';
+    var ctx=document.getElementById('ring-'+o.uid);if(!ctx)return;
+    if(charts['r'+o.uid] instanceof Chart)charts['r'+o.uid].destroy();
+    var ringBg=document.body.classList.contains('light')?'#D1DCF0':'#1A2E45';
+    charts['r'+o.uid]=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[av,100-av],backgroundColor:[col,ringBg],borderWidth:0}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}});
+  });
+}
+
+function renderTimeline(){
+  var act=DB.filter(function(d){return d.estado==='En Curso'&&d.fechaFin;});
+  act.sort(function(a,b){return(diasR(a.fechaFin)||9999)-(diasR(b.fechaFin)||9999);});
+  var el=document.getElementById('timeline');
+  if(!act.length){el.innerHTML='<div class="empty" style="padding:16px"><div class="ei">📅</div>Sin elementos activos con fecha.</div>';return;}
+  el.innerHTML=act.slice(0,8).map(function(d){
+    var di=diasR(d.fechaFin),pct=d.avance||0;
+    var col=di<0?'var(--red)':di<=CFG.critico?'var(--yellow)':di<=CFG.proximo?'var(--orange)':'var(--blue)';
+    return'<div class="tl-item"><div class="tl-info"><div class="tl-nom" title="'+d.nombre+'">'+d.nombre+'</div><div class="tl-resp">'+d.responsable+'</div></div><div class="tl-bw"><div class="tl-bf" style="width:'+pct+'%;background:'+col+'"></div></div><div class="tl-d" style="color:'+col+'">'+(di!==null?(di<0?Math.abs(di)+'d atrás':di+'d'):'—')+'</div></div>';
+  }).join('');
+}
+
+function renderRiesgo(){
+  var r=DB.filter(function(d){var t=ta(d);return t==='v'||t==='c';});
+  r.sort(function(a,b){return(diasR(a.fechaFin)||9999)-(diasR(b.fechaFin)||9999);});
+  var el=document.getElementById('riesgo');
+  if(!r.length){el.innerHTML='<div class="empty" style="padding:14px"><div class="ei">✅</div>Sin riesgos inmediatos</div>';return;}
+  el.innerHTML=r.slice(0,5).map(function(d){
+    var di=diasR(d.fechaFin);
+    return'<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(26,46,69,.5)">'+dotH(ta(d))+'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" onclick="abrirDetalle(\''+d.uid+'\')">'+d.nombre+'</div><div style="font-size:10px;color:var(--muted)">'+d.responsable+' · '+(di!==null?(di<0?'Vencido hace '+Math.abs(di)+'d':di+'d rest.'):'Sin fecha')+'</div></div></div>';
+  }).join('');
+}
+
+function renderTopResp(){
+  var m={};
+  DB.forEach(function(d){
+    var nombres=[];
+    if(d.responsables&&d.responsables.length){
+      d.responsables.forEach(function(r){if(r.nombre&&r.nombre.trim())nombres.push(r.nombre.trim());});
+    } else if(d.responsable&&d.responsable.trim()){
+      nombres.push(d.responsable.trim());
+    }
+    nombres.forEach(function(n){m[n]=(m[n]||0)+1;});
+  });
+  var s=Object.keys(m).sort(function(a,b){return m[b]-m[a];}).slice(0,5);
+  var mx=s.length?m[s[0]]:1;
+  document.getElementById('top-resp').innerHTML=s.map(function(n){
+    var pct=Math.round(m[n]/mx*100);
+    var ini=n.split(' ').map(function(p){return p[0]||'';}).slice(0,2).join('').toUpperCase();
+    return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;border-radius:6px;padding:3px 4px;transition:background .15s" title="Ver registros de '+n+'" onmouseover="this.style.background=\'rgba(59,130,246,.1)\'" onmouseout="this.style.background=\'transparent\'" onclick="filtrarPorResp(\''+n+'\')"><div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+ini+'</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">'+n+'</div><div style="height:4px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:3px"><div style="width:'+pct+'%;height:100%;background:var(--blue);border-radius:2px"></div></div></div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">'+m[n]+'</div></div>';
+  }).join('')||'<div style="color:var(--muted);font-size:12px">Sin datos</div>';
+}
+
+function filtrarPorResp(nombre){
+  irVista('gestor');
+  setTimeout(function(){
+    var inp=document.getElementById('buscador');
+    if(inp){inp.value=nombre;filtrarB();}
+  },100);
+}
+
+function mkC(id,tipo,lbl,dat,cols){
+  if(charts[id] instanceof Chart){charts[id].destroy();charts[id]=null;}
+  var ctx=document.getElementById(id);if(!ctx)return;
+  var isLight=document.body.classList.contains('light');
+  var tickC=isLight?'#6B82A0':'#5A7A9A';
+  var gridC=isLight?'#D1DCF0':'#1A2E45';
+  var tipBg=isLight?'#FFFFFF':'#162435';
+  var tipTtl=isLight?'#0F1E35':'#EEF4FF';
+  var tipBd=isLight?'#D1DCF0':'#243D58';
+  var o={responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{labels:{color:tickC,font:{size:10,family:'JetBrains Mono'}}},tooltip:{backgroundColor:tipBg,titleColor:tipTtl,bodyColor:tickC,borderColor:tipBd,borderWidth:1}}};
+  if(tipo==='bar'){o.scales={x:{ticks:{color:tickC},grid:{color:gridC}},y:{ticks:{color:tickC},grid:{color:gridC}}};o.plugins.legend={display:false};}
+  charts[id]=new Chart(ctx,{type:tipo,data:{labels:lbl,datasets:[{data:dat,backgroundColor:tipo==='bar'?cols[0]:cols,borderWidth:0,borderRadius:tipo==='bar'?4:0}]},options:o});
+}
+
+function animN(id,fin){
+  var el=document.getElementById(id);if(!el)return;
+  var t0=performance.now(),dur=700;
+  (function f(t){var p=Math.min((t-t0)/dur,1);el.textContent=Math.floor(p*fin);if(p<1)requestAnimationFrame(f);else el.textContent=fin;})(t0);
+}
+
+function filtKPI(f){
+  kpiFilt=(kpiFilt===f)?'':f;
+  document.querySelectorAll('.kpi').forEach(function(k){k.classList.remove('sel');});
+  if(kpiFilt){var m={'En Curso':'kpi-c','Completado':'kpi-o','En Pausa':'kpi-p'};if(m[kpiFilt])document.getElementById(m[kpiFilt]).classList.add('sel');}
+  pag=1;irVista('gestor');
+}
+
+// ═══ ALERTAS SLA — 4 COLUMNAS VISUALES ═══
+function renderAlertas(){
+  var venc=DB.filter(function(d){return ta(d)==='v';});
+  var crit=DB.filter(function(d){return ta(d)==='c';});
+  var prox=DB.filter(function(d){return ta(d)==='p';});
+  var aldia=DB.filter(function(d){return ta(d)==='o'&&d.estado!=='Cancelado';});
+
+  function sD(a){return a.slice().sort(function(a,b){return(diasR(a.fechaFin)||9999)-(diasR(b.fechaFin)||9999);});}
+  venc=sD(venc);crit=sD(crit);prox=sD(prox);
+
+  document.getElementById('alerta-grid').innerHTML=
+    buildAcol('av','🔴 Vencidos',venc.length,venc,'v')+
+    buildAcol('ac','🟡 Críticos ≤'+CFG.critico+'d',crit.length,crit,'c')+
+    buildAcol('ap','🟠 Próximos ≤'+CFG.proximo+'d',prox.length,prox,'p')+
+    buildAcol('ao','🟢 Al Día',aldia.length,aldia,'o');
+}
+
+function buildAcol(cls,ttl,cnt,items,tipo){
+  var diasColor={v:'var(--red)',c:'var(--yellow)',p:'var(--orange)',o:'var(--green)'};
+  var html='<div class="acol '+cls+'">'
+    +'<div class="acol-hdr"><span class="acol-ttl">'+ttl+'</span><span class="acol-cnt">'+cnt+'</span></div>'
+    +'<div class="acol-body">';
+  if(!items.length){
+    html+='<div class="acol-vacio">'+(tipo==='o'?'Sin elementos activos al día':'✅ Ninguno en esta categoría')+'</div>';
+  } else {
+    html+=items.map(function(d){
+      var di=diasR(d.fechaFin);
+      var diaTxt=tipo==='v'?'Hace '+Math.abs(di||0)+'d':
+                 tipo==='o'?(d.estado==='Completado'?'Completado':d.estado==='Cancelado'?'Cancelado':(di!==null?di+'d rest.':'Sin fecha')):
+                 di!==null?di+'d rest.':'Sin fecha';
+      return'<div class="aitem" onclick="abrirDetalle(\''+d.uid+'\')">'
+        +'<div class="aitem-id">'+dotH(tipo)+' '+d.id+' · '+d.nivel+'</div>'
+        +'<div class="aitem-nom">'+d.nombre+'</div>'
+        +'<div class="aitem-row">'+chipE(d.estado)+' '+chipP(d.prioridad)
+        +'<span class="aitem-dias" style="color:'+diasColor[tipo]+'">'+diaTxt+'</span></div>'
+        +'<div class="aitem-resp">👤 '+d.responsable+(d.fechaFin?' · 📅 '+d.fechaFin:'')+'</div>'
+        +'<div class="aitem-prog">'+barH(avanceCalc(d.uid))+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  return html+'</div></div>';
+}
+
+// ═══ ÁRBOL JERÁRQUICO — ANIDAMIENTO REAL ═══
+function setExpandAll(val){
+  DB.forEach(function(d){expandidos[d.uid]=val;});
+  renderArbol();
+}
+
+function toggleExpandir(uid,e){
+  e.stopPropagation();
+  expandidos[uid]=!expandidos[uid];
+  renderArbol();
+}
+
+function renderArbol(){
+  var el=document.getElementById('arbol-body');
+  if(!DB.length){
+    el.innerHTML='<div class="empty"><div class="ei">🌳</div>No hay registros aún.<br><br><button class="btn bp" onclick="abrirNuevo()">➕ Crear primer Objetivo</button></div>';
+    return;
+  }
+  var raices=DB.filter(function(d){return d.nivel==='Objetivo';});
+  var huerfanos=DB.filter(function(d){return d.nivel!=='Objetivo'&&!d.padreUID;});
+  var html='<div class="arbol-root">';
+  raices.forEach(function(r){html+=renderNodo(r);});
+  if(huerfanos.length){
+    html+='<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">'
+      +'<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Sin objetivo padre</div>';
+    huerfanos.forEach(function(d){html+=renderNodo(d);});
+    html+='</div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderNodo(d){
+  var hijos=getHijos(d.uid);
+  var tieneH=hijos.length>0;
+  var exp=expandidos[d.uid]!==false; // default: expandido
+  var t=ta(d),av=avanceCalc(d.uid);
+  var pcol=av>=80?'#10B981':av>=50?'#3B82F6':av>=25?'#F59E0B':'#EF4444';
+  var tarjeta=nC(d.nivel).replace('c','n');// nobj, nact, ntar, nsub
+
+  var html='<div class="arbol-nodo">'
+    +'<div class="tree-card '+tarjeta+'" onclick="abrirDetalle(\''+d.uid+'\')">'
+    +'<div class="tree-top">'
+    +(tieneH
+      ?'<button class="tree-toggle" onclick="toggleExpandir(\''+d.uid+'\',event)">'+(exp?'▼':'▶')+'</button>'
+      :'<span style="width:20px;display:inline-block"></span>')
+    +dotH(t)
+    +'<span class="tree-id-txt">'+d.id+'</span>'
+    +chipN(d.nivel)
+    +'<span class="tree-nom">'+d.nombre+'</span>'
+    +(tieneH?'<span class="tree-hijos-cnt">'+hijos.length+' hijo'+(hijos.length>1?'s':'')+'</span>':'')
+    +'<div style="margin-left:auto;display:flex;gap:5px" onclick="event.stopPropagation()">'
+    +'<button class="btn bg bx" onclick="abrirEditar(\''+d.uid+'\')">✏️</button>'
+    +'<button class="btn bd bx" onclick="eliminar(\''+d.uid+'\')">🗑️</button>'
+    +'</div>'
+    +'</div>'
+    +'<div class="tree-meta">'
+    +chipE(d.estado)+' '+chipP(d.prioridad)
+    +'<span style="font-size:10px;color:var(--muted)">👤 '+d.responsable+'</span>'
+    +(d.fechaFin?'<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">📅 '+d.fechaFin+'</span>':'')
+    +'<div style="margin-left:auto;display:flex;align-items:center;gap:5px">'
+    +'<div class="tree-pbar"><div class="tree-pfill" style="width:'+av+'%;background:'+pcol+'"></div></div>'
+    +'<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">'+av+'%</span>'
+    +'</div></div>'
+    +'</div>'; // tree-card
+
+  if(tieneH && exp){
+    html+='<div class="tree-children">';
+    hijos.forEach(function(h){
+      html+='<div class="tree-child-item">'+renderNodo(h)+'</div>';
+    });
+    html+='</div>';
+  }
+
+  html+='</div>';
+  return html;
+}
+
+// ═══ FORMULARIO ═══
+function onNiv(){
+  var niv=document.getElementById('f-niv').value;
+  var wrap=document.getElementById('f-padre-wrap');
+  var map={Actividad:'Objetivo padre',Tarea:'Actividad padre',Subtarea:'Tarea padre'};
+  var fn={Actividad:'Objetivo',Tarea:'Actividad',Subtarea:'Tarea'};
+  if(niv==='Objetivo'){wrap.style.display='none';genID();return;}
+  wrap.style.display='';
+  document.getElementById('f-padre-lbl').textContent=map[niv];
+  var padres=DB.filter(function(d){return d.nivel===fn[niv];});
+  document.getElementById('f-padre').innerHTML='<option value="">— Sin vincular —</option>'
+    +padres.map(function(d){return'<option value="'+d.uid+'">'+d.id+' — '+d.nombre+'</option>';}).join('');
+  if(padres.length===1)document.getElementById('f-padre').value=padres[0].uid;
+  genID();
+}
+
+function genID(){
+  if(document.getElementById('f-uid').value)return;
+  var niv=document.getElementById('f-niv').value;
+  var p={Objetivo:'OBJ',Actividad:'ACT',Tarea:'TAR',Subtarea:'SUB'}[niv]||'OBJ';
+  cnt[p]=(cnt[p]||0)+1;
+  document.getElementById('f-id').value='LEG-'+p+'-'+String(cnt[p]).padStart(3,'0');
+}
+
+function abrirNuevo(){
+  document.getElementById('f-uid').value='';
+  ['f-nom','f-com'].forEach(function(i){document.getElementById(i).value='';});
+  document.getElementById('f-av').value='0';document.getElementById('f-ini').value='';document.getElementById('f-fin').value='';
+  document.getElementById('f-niv').value='Objetivo';document.getElementById('f-fase').value='Planeación';
+  document.getElementById('f-est').value='No Iniciado';document.getElementById('f-prio').value='Normal';
+  document.getElementById('f-id').value='';document.getElementById('form-ttl').textContent='Nuevo Registro';
+  window._formResp=[{nombre:'',correo:''}];
+  window._formLinks=[];
+  renderRespList(); renderLinksList();
+  onNiv();document.getElementById('ov-form').classList.add('open');
+}
+
+function abrirEditar(uid){
+  var d=DB.find(function(x){return x.uid===uid;});if(!d)return;
+  document.getElementById('f-uid').value=uid;document.getElementById('f-id').value=d.id;
+  document.getElementById('f-nom').value=d.nombre||'';
+  document.getElementById('f-av').value=d.avance||0;
+  document.getElementById('f-ini').value=d.fechaInicio||'';document.getElementById('f-fin').value=d.fechaFin||'';
+  document.getElementById('f-com').value=d.comentarios||'';document.getElementById('f-niv').value=d.nivel||'Objetivo';
+  document.getElementById('f-fase').value=d.fase||'Planeación';document.getElementById('f-est').value=d.estado||'No Iniciado';
+  document.getElementById('f-prio').value=d.prioridad||'Normal';document.getElementById('form-ttl').textContent='Editar: '+d.id;
+  // Responsables — migrate legacy single
+  if(d.responsables&&d.responsables.length){
+    window._formResp=d.responsables.map(function(r){return{nombre:r.nombre||'',correo:r.correo||''};});
+  } else {
+    window._formResp=[{nombre:d.responsable||'',correo:d.correo||''}];
+  }
+  // Links
+  window._formLinks=(d.links||[]).map(function(l){return{nombre:l.nombre||'',url:l.url||''};});
+  renderRespList(); renderLinksList();
+  onNiv();document.getElementById('f-padre').value=d.padreUID||'';
+  cerrar('ov-det');document.getElementById('ov-form').classList.add('open');
+}
+
+function guardarReg(){
+  var nom=document.getElementById('f-nom').value.trim();
+  var resps=(window._formResp||[]).filter(function(r){return r.nombre.trim();});
+  if(!nom){alert('El nombre es obligatorio.');return;}
+  if(!resps.length){alert('Agrega al menos un responsable.');return;}
+  var uid=document.getElementById('f-uid').value||('u'+Date.now());
+  var av=Math.min(100,Math.max(0,parseInt(document.getElementById('f-av').value)||0));
+  var links=(window._formLinks||[]).filter(function(l){return l.url.trim();});
+  var reg={uid:uid,id:document.getElementById('f-id').value,nivel:document.getElementById('f-niv').value,
+    padreUID:document.getElementById('f-padre').value||null,nombre:nom,
+    responsables:resps,
+    responsable:resps[0].nombre,  // compat legacy
+    correo:resps[0].correo||'',
+    links:links,
+    fase:document.getElementById('f-fase').value,
+    estado:document.getElementById('f-est').value,prioridad:document.getElementById('f-prio').value,
+    avance:av,fechaInicio:document.getElementById('f-ini').value,fechaFin:document.getElementById('f-fin').value,
+    comentarios:document.getElementById('f-com').value.trim(),ultimaAct:new Date().toLocaleDateString('es-MX')};
+  var idx=DB.findIndex(function(x){return x.uid===uid;});
+  if(idx>=0)DB[idx]=reg;else DB.push(reg);
+  guardarDatos();recalcCnt();cerrar('ov-form');actuTodo();
+  toast('✅ Registro '+(idx>=0?'actualizado':'creado')+': '+reg.id);
+}
+
+function eliminar(uid){
+  if(!confirm('¿Eliminar este registro?'))return;
+  var hijos=getDesc(uid);
+  if(hijos.length&&!confirm('Este registro tiene '+hijos.length+' elemento(s) vinculado(s). ¿Eliminar también?'))return;
+  var del=[uid];hijos.forEach(function(h){del.push(h.uid);});
+  DB=DB.filter(function(d){return del.indexOf(d.uid)===-1;});
+  guardarDatos();recalcCnt();cerrar('ov-det');actuTodo();
+}
+
+function cerrar(id){document.getElementById(id).classList.remove('open');}
+
+// ═══ DETALLE ═══
+function abrirDetalle(uid){
+  var d=DB.find(function(x){return x.uid===uid;});if(!d)return;
+  var t=ta(d),di=diasR(d.fechaFin);
+  var cadena=getCadena(d);
+  var hijos=getHijos(d.uid);
+  document.getElementById('det-ttl').textContent=d.id+' — '+d.nombre;
+
+  var cadenaH='';
+  if(cadena.length>0){
+    cadenaH='<div class="cadena-box">'
+      +'<div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cadena jerárquica</div>'
+      +cadena.map(function(x,i){return'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+(i>0?'<span style="color:var(--muted);margin-left:'+(i*14)+'px;font-size:12px">└</span>':'')+'<span class="chip '+nC(x.nivel)+'" style="'+(x.uid===uid?'outline:2px solid var(--blue);':'')+'">'+(i===0?x.nivel:x.nivel)+'</span><span style="font-size:11px;'+(x.uid===uid?'font-weight:700':'color:var(--muted)')+'">'+x.id+' — '+x.nombre+'</span></div>';}).join('')
+      +'</div>';
+  }
+
+  var hijosH='';
+  if(hijos.length){
+    hijosH='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Elementos hijos ('+hijos.length+')</div>'
+      +hijos.slice(0,5).map(function(h){return'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(26,46,69,.5)">'+chipN(h.nivel)+' <span style="font-size:11px">'+h.id+' — '+h.nombre+'</span>'+chipE(h.estado)+barH(h.avance)+'</div>';}).join('')
+      +(hijos.length>5?'<div style="font-size:10px;color:var(--muted);margin-top:4px">...y '+(hijos.length-5)+' más</div>':'')
+      +'</div>';
+  }
+
+  var resps=d.responsables&&d.responsables.length?d.responsables:[{nombre:d.responsable||'',correo:d.correo||''}];
+
+  document.getElementById('det-body').innerHTML=
+    cadenaH
+    +'<div class="det-r"><div class="det-f"><label>Nivel</label><div class="det-v">'+chipN(d.nivel)+'</div></div><div class="det-f"><label>Estado</label><div class="det-v">'+chipE(d.estado)+'</div></div></div>'
+    +'<div class="det-r"><div class="det-f"><label>Fase</label><div class="det-v">'+d.fase+'</div></div><div class="det-f"><label>Prioridad</label><div class="det-v">'+chipP(d.prioridad)+'</div></div></div>'
+    +'<div class="det-f" style="margin-bottom:12px"><label>Responsable(s)</label><div class="det-v" style="margin-top:5px">'+respHTML(resps)+'</div></div>'
+    +(d.links&&d.links.length?'<div class="det-f" style="margin-bottom:12px"><label>📎 Archivos / Links</label><div class="det-v" style="margin-top:5px">'+linksHTML(d.links)+'</div></div>':'')
+    +'<div class="det-r"><div class="det-f"><label>Fecha Inicio</label><div class="det-v">'+(d.fechaInicio||'—')+'</div></div><div class="det-f"><label>Fecha Fin</label><div class="det-v">'+(d.fechaFin||'—')+'</div></div></div>'
+    +'<div class="det-r"><div class="det-f"><label>Avance</label><div class="det-v">'+barH(avanceCalc(d.uid))+'</div></div><div class="det-f"><label>Alerta</label><div class="det-v">'+dotH(t)+' <span style="margin-left:6px">'+(di!==null?(di<0?'Vencido hace '+Math.abs(di)+'d':di+'d restantes'):'Sin fecha')+'</span></div></div></div>'
+    +(d.comentarios?'<div class="det-f" style="margin-bottom:12px"><label>Comentarios</label><div class="det-v" style="color:var(--muted)">'+d.comentarios+'</div></div>':'')
+    +hijosH
+    +'<div class="det-f"><label>Última actualización</label><div class="det-v" style="color:var(--muted)">'+(d.ultimaAct||'—')+'</div></div>';
+
+  document.getElementById('det-edit').onclick=function(){abrirEditar(uid);};
+  document.getElementById('det-del').onclick=function(){eliminar(uid);};
+  document.getElementById('ov-det').classList.add('open');
+}
+
+// ═══ TABLA ═══
+function getFilt(){
+  var q=(document.getElementById('busq')||{}).value||'';q=q.toLowerCase();
+  var fn_=(document.getElementById('fn')||{}).value||'';
+  var fe_=(document.getElementById('fe')||{}).value||'';
+  var fp_=(document.getElementById('fp')||{}).value||'';
+  return DB.filter(function(d){
+    if(fn_&&d.nivel!==fn_)return false;if(fe_&&d.estado!==fe_)return false;if(fp_&&d.prioridad!==fp_)return false;
+    if(kpiFilt&&kpiFilt!=='todos'&&d.estado!==kpiFilt)return false;
+    if(q){
+      var respStr=(d.responsables||[]).map(function(r){return r.nombre+' '+r.correo;}).join(' ');
+      var txt=(d.nombre+d.id+(d.responsable||'')+d.estado+respStr).toLowerCase();
+      if(txt.indexOf(q)===-1)return false;
+    }
+    return true;
+  });
+}
+
+function renderT(){
+  var dat=getFilt();
+  if(sortCol){dat.sort(function(a,b){
+    var va=sortCol==='dias'?diasR(a.fechaFin)||9999:a[sortCol]||'';
+    var vb=sortCol==='dias'?diasR(b.fechaFin)||9999:b[sortCol]||'';
+    var c=typeof va==='number'?va-vb:String(va).localeCompare(String(vb));
+    return sortDir==='asc'?c:-c;
+  });}
+  var tot=dat.length,ini=(pag-1)*rpp,sl=dat.slice(ini,ini+rpp),tp=Math.max(1,Math.ceil(tot/rpp));
+  var tb=document.getElementById('tbody');
+  if(!sl.length){tb.innerHTML='<tr><td colspan="14"><div class="empty"><div class="ei">🔍</div>Sin resultados. Usa ➕ Nuevo Registro para comenzar.</div></td></tr>';
+  }else{
+    var ESTADOS=['No Iniciado','En Curso','En Pausa','Completado','Cancelado'];
+    var FASES=['Planeación','Desarrollo','Implementación','Validación','Liberación','Mantenimiento'];
+    var PRIOS=['Muy Alta','Alta','Normal','Baja'];
+    tb.innerHTML=sl.map(function(d){
+      var t_=ta(d),di=diasR(d.fechaFin);
+      var min=minutosR(d.fechaFin); // null if no time specified
+      var dC=di!==null&&di<0?'var(--red)':di!==null&&di<=CFG.critico?'var(--yellow)':'var(--muted)';
+      var dT=di!==null?(di<0?Math.abs(di)+'d atrás':di+'d'):'—';
+      // Badge de 1 hora
+      var horaBadge=(min!==null&&min>=0&&min<=60&&d.estado!=='Completado'&&d.estado!=='Cancelado')
+        ?'<span class="hora-badge">⏰'+Math.ceil(min)+'m</span>':'';
+      // responsables display
+      var resps=d.responsables&&d.responsables.length?d.responsables:[{nombre:d.responsable||'',correo:d.correo||''}];
+      var respCell=resps.map(function(r){
+        var ini=(r.nombre||'?').split(' ').map(function(p){return p[0]||'';}).slice(0,2).join('').toUpperCase();
+        return'<div class="resp-tag" style="margin:1px 0">'
+          +'<div class="resp-av">'+ini+'</div>'
+          +'<span>'+r.nombre+'</span>'
+          +(r.correo?'<a href="mailto:'+r.correo+'" onclick="event.stopPropagation()" title="'+r.correo+'" style="color:var(--muted);font-size:10px;text-decoration:none">✉️</a>':'')
+          +'</div>';
+      }).join('');
+      // links display
+      var linksCell='';
+      if(d.links&&d.links.length){
+        linksCell=d.links.map(function(l){
+          if(!l.url)return'';
+          return'<a class="link-chip" href="'+l.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="'+(l.nombre||l.url)+'">'
+            +'<span class="li">'+linkIcon(l.url)+'</span>'
+            +(l.nombre||'Link')+'</a>';
+        }).join('');
+      }
+      return'<tr data-uid="'+d.uid+'" class="tbl-row">'
+        +'<td style="font-family:var(--mono);font-size:10px;color:var(--muted)">'+d.id+'</td>'
+        +'<td>'+chipN(d.nivel)+'</td>'
+        +'<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+d.nombre+'">'+d.nombre+'</td>'
+        +'<td style="font-size:10px">'+cadenaH(d)+'</td>'
+        +'<td><div class="resp-tags" style="flex-direction:column;align-items:flex-start">'+respCell+'</div></td>'
+        // Fase — inline dropdown
+        +'<td class="dd-cell" data-uid="'+d.uid+'" data-campo="fase" data-val="'+d.fase+'">'
+        +'<span class="cell-dd" style="color:var(--muted);font-size:11px">'+d.fase+'</span></td>'
+        // Estado — inline dropdown
+        +'<td class="dd-cell" data-uid="'+d.uid+'" data-campo="estado" data-val="'+d.estado+'">'
+        +'<span class="cell-dd">'+chipE(d.estado)+'</span></td>'
+        // Prioridad — inline dropdown
+        +'<td class="dd-cell" data-uid="'+d.uid+'" data-campo="prioridad" data-val="'+d.prioridad+'">'
+        +'<span class="cell-dd">'+chipP(d.prioridad)+'</span></td>'
+        // Fecha Inicio — inline editable
+        +'<td class="date-cell" data-uid="'+d.uid+'" data-campo="fechaInicio" title="Clic para editar fecha de inicio">'
+        +'<span class="cell-dd" style="font-family:var(--mono);font-size:11px;color:var(--muted)">'+(d.fechaInicio?d.fechaInicio.replace('T',' ').slice(0,16):'—')+'</span></td>'
+        // Fecha Fin — inline editable
+        +'<td class="date-cell" data-uid="'+d.uid+'" data-campo="fechaFin" title="Clic para editar fecha fin">'
+        +'<span class="cell-dd" style="font-family:var(--mono);font-size:11px;color:'+dC+'">'+(d.fechaFin?d.fechaFin.replace('T',' ').slice(0,16):'—')+'</span></td>'
+        +'<td style="font-family:var(--mono);font-size:11px;color:'+dC+'">'+dT+horaBadge+'</td>'
+        +'<td>'+barH(avanceCalc(d.uid))+'</td>'
+        // Links — inline editable
+        +'<td class="links-cell" data-uid="'+d.uid+'" style="max-width:180px" title="Clic para gestionar links">'
+        +'<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">'+linksCell
+        +'<span class="links-add-btn">＋</span>'
+        +'</div></td>'
+        +'<td>'+dotH(t_)+'</td>'
+        +'<td class="dd-cell-stop" style="white-space:nowrap">'
+        +'<button class="btn bg bx" onclick="event.stopPropagation();abrirEditar(\''+d.uid+'\')">✏️</button> '
+        +'<button class="btn bd bx" onclick="event.stopPropagation();eliminar(\''+d.uid+'\')">🗑️</button>'
+        +'</td></tr>';
+    }).join('');
+  }
+  var pg=document.getElementById('pag');
+  var h='<span class="pag-i">Mostrando '+(ini+1)+'–'+Math.min(ini+rpp,tot)+' de '+tot+'</span>';
+  h+='<button class="pb" onclick="irPag('+(pag-1)+')" '+(pag<=1?'disabled':'')+'>← Ant</button>';
+  for(var p=Math.max(1,pag-2);p<=Math.min(tp,pag+2);p++)h+='<button class="pb'+(p===pag?' cur':'')+'" onclick="irPag('+p+')">'+p+'</button>';
+  h+='<button class="pb" onclick="irPag('+(pag+1)+')" '+(pag>=tp?'disabled':'')+'>Sig →</button>';
+  pg.innerHTML=h;
+  bindDDCells();
+}
+
+function irPag(n){var tp=Math.max(1,Math.ceil(getFilt().length/rpp));if(n<1||n>tp)return;pag=n;renderT();}
+function ord(c){if(sortCol===c)sortDir=sortDir==='asc'?'desc':'asc';else{sortCol=c;sortDir='asc';}pag=1;renderT();}
+function cambRPP(){rpp=parseInt(document.getElementById('frpp').value)||10;pag=1;renderT();}
+function dBusq(){clearTimeout(dTimer);dTimer=setTimeout(function(){pag=1;renderT();},300);}
+
+// ═══ KANBAN ═══
+function setVG(v){
+  vistaG=v;
+  document.getElementById('vb-l').classList.toggle('act',v==='lista');
+  document.getElementById('vb-k').classList.toggle('act',v==='kanban');
+  document.getElementById('v-lista').style.display=v==='lista'?'':'none';
+  document.getElementById('v-kanban').style.display=v==='kanban'?'':'none';
+  if(v==='kanban')renderK();
+}
+
+function renderK(){
+  var cols=['No Iniciado','En Curso','En Pausa','Completado','Cancelado'];
+  var cc={'No Iniciado':'var(--muted)','En Curso':'var(--blue)','En Pausa':'var(--yellow)','Completado':'var(--green)','Cancelado':'var(--red)'};
+  var b=document.getElementById('kanban');
+  b.innerHTML=cols.map(function(col){
+    var items=DB.filter(function(d){return d.estado===col;});
+    return'<div class="k-col" data-estado="'+col+'">'
+      +'<div class="k-hdr" style="border-left:3px solid '+cc[col]+'">'+col+'<span class="k-cnt">'+items.length+'</span></div>'
+      +'<div class="k-cards">'+items.map(function(d){
+        var par=d.padreUID?DB.find(function(x){return x.uid===d.padreUID;}):null;
+        return'<div class="k-card" draggable="true" data-uid="'+d.uid+'">'
+          +'<div class="k-id">'+d.id+'</div><div class="k-nom">'+d.nombre+'</div>'
+          +(par?'<div class="k-par">↑ '+par.id+'</div>':'')
+          +'<div class="k-foot">'+chipN(d.nivel)+' '+chipP(d.prioridad)+'<span style="font-size:9px;color:var(--muted);margin-left:auto">'+d.responsable+'</span></div>'
+          +'</div>';
+      }).join('')+'</div></div>';
+  }).join('');
+  b.querySelectorAll('.k-card').forEach(function(c){
+    c.addEventListener('dragstart',function(){window.isDrag=true;window.duid=this.dataset.uid;this.classList.add('dragging');});
+    c.addEventListener('dragend',function(){window.isDrag=false;window.duid=null;this.classList.remove('dragging');});
+    c.addEventListener('click',function(){abrirDetalle(this.dataset.uid);});
+  });
+  b.querySelectorAll('.k-col').forEach(function(col){
+    col.addEventListener('dragover',function(e){e.preventDefault();});
+    col.addEventListener('drop',function(e){
+      e.preventDefault();if(!window.isDrag||!window.duid)return;
+      var item=DB.find(function(d){return d.uid===window.duid;});
+      if(item&&item.estado!==this.dataset.estado){item.estado=this.dataset.estado;item.ultimaAct=new Date().toLocaleDateString('es-MX');guardarDatos();renderK();}
+    });
+  });
+}
+
+// ═══ CARGA ═══
+function renderCarga(){
+  var m={};
+  DB.forEach(function(d){if(!d.responsable)return;if(!m[d.responsable])m[d.responsable]={t:0,c:0,ma:0,al:0,no:0,ba:0};
+    m[d.responsable].t++;if(d.estado==='Completado')m[d.responsable].c++;
+    if(d.prioridad==='Muy Alta')m[d.responsable].ma++;if(d.prioridad==='Alta')m[d.responsable].al++;
+    if(d.prioridad==='Normal')m[d.responsable].no++;if(d.prioridad==='Baja')m[d.responsable].ba++;
+  });
+  var ns=Object.keys(m);var el=document.getElementById('carga');
+  if(!ns.length){el.innerHTML='<div class="empty"><div class="ei">👥</div>Sin datos.</div>';return;}
+  el.innerHTML=ns.map(function(n){
+    var d=m[n],pct=d.t>0?Math.round(d.c/d.t*100):0;
+    var ini=n.split(' ').map(function(p){return p[0]||'';}).slice(0,2).join('').toUpperCase();
+    return'<div class="cc"><div class="cc-av">'+ini+'</div><div class="cc-nom">'+n+'</div>'
+      +'<div class="cc-sub">'+d.c+'/'+d.t+' completados · '+pct+'%</div>'
+      +'<div class="cc-bar"><div class="cc-bfill" style="width:'+pct+'%"></div></div>'
+      +'<div class="cc-chips">'
+      +(d.ma?'<span class="chip pma">🔴 '+d.ma+'</span>':'')+' '
+      +(d.al?'<span class="chip pal">🟠 '+d.al+'</span>':'')+' '
+      +(d.no?'<span class="chip pno">🔵 '+d.no+'</span>':'')+' '
+      +(d.ba?'<span class="chip pba">⚪ '+d.ba+'</span>':'')
+      +'</div></div>';
+  }).join('');
+}
+
+// ═══ EXPORTAR ═══
+function exportarCSV(){
+  if(!DB.length){toast('⚠️ No hay registros para exportar.');return;}
+  var cols=['ID','Nivel','Nombre','PadreID','Responsable','Correo','Fase','Estado','Prioridad','FechaInicio','FechaFin','DiasRestantes','Avance','Comentarios','UltimaAct'];
+  var rows=[cols.join(',')];
+  DB.forEach(function(d){
+    var par=d.padreUID?DB.find(function(x){return x.uid===d.padreUID;}):null;
+    function esc(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}
+    rows.push([
+      esc(d.id), esc(d.nivel), esc(d.nombre),
+      esc(par?par.id:''), esc(d.responsable), esc(d.correo),
+      esc(d.fase), esc(d.estado), esc(d.prioridad),
+      esc(d.fechaInicio), esc(d.fechaFin),
+      diasR(d.fechaFin)!==null?diasR(d.fechaFin):'',
+      d.avance||0, esc(d.comentarios), esc(d.ultimaAct)
+    ].join(','));
+  });
+  dl('\uFEFF'+rows.join('\n'),'gestor-objetivos.csv','text/csv;charset=utf-8;');
+  toast('✅ CSV exportado — '+DB.length+' registros');
+}
+function exportarJSON(){
+  if(!DB.length){toast('⚠️ No hay registros para exportar.');return;}
+  dl(JSON.stringify({v:3,cfg:CFG,datos:DB},null,2),'gestor-objetivos.json','application/json');
+  toast('✅ JSON exportado — '+DB.length+' registros');
+}
+function dl(c,n,t){var b=new Blob([c],{type:t});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=n;a.click();setTimeout(function(){URL.revokeObjectURL(u);},1000);}
+function importarJSON(inp){
+  var f=inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.datos&&Array.isArray(d.datos)){if(!confirm('¿Importar '+d.datos.length+' registros?'))return;DB=d.datos;if(d.cfg)CFG=Object.assign(CFG,d.cfg);guardarDatos();try{localStorage.setItem('gob3cfg',JSON.stringify(CFG));}catch(ex){}recalcCnt();cargarCfg();actuTodo();toast('✅ '+DB.length+' registros importados');}else{alert('Formato incorrecto.');}}catch(ex){alert('Error: '+ex.message);}};
+  r.readAsText(f);inp.value='';
+}
+function exportarPDF(){
+  var venc=DB.filter(function(d){return ta(d)==='v';});
+  var crit=DB.filter(function(d){return ta(d)==='c';});
+  var prox=DB.filter(function(d){return ta(d)==='p';});
+  var comp=DB.filter(function(d){return d.estado==='Completado';});
+  var objs=DB.filter(function(d){return d.nivel==='Objetivo';});
+  var avG=objs.length?Math.round(objs.reduce(function(s,d){return s+avanceCalc(d.uid);},0)/objs.length):0;
+  var ahora=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  var w=window.open('','_blank');
+  if(!w){toast('⚠️ Permite ventanas emergentes para descargar el PDF');return;}
+  var css='*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#0F1E35;background:#fff;padding:32px}';
+  css+='.hdr{border-bottom:3px solid #3B82F6;padding-bottom:16px;margin-bottom:24px}.hdr h1{font-size:22px;color:#3B82F6;margin-bottom:4px}.hdr p{color:#6B82A0;font-size:11px}';
+  css+='.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}';
+  css+='.kpi{background:#F8FAFF;border:1px solid #D1DCF0;border-radius:8px;padding:14px;text-align:center}';
+  css+='.kpi-v{font-size:28px;font-weight:800;color:#3B82F6;font-family:monospace}.kpi-l{font-size:10px;color:#6B82A0;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}';
+  css+='.section{margin-bottom:20px}.section h2{font-size:13px;font-weight:700;border-left:4px solid #3B82F6;padding-left:10px;margin-bottom:10px}';
+  css+='.item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #EEF2FF}';
+  css+='.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}';
+  css+='.dv{background:#EF4444}.dc{background:#F59E0B}.dp{background:#F97316}.dok{background:#10B981}.dg{background:#6B7280}';
+  css+='.item-nom{font-size:11px;font-weight:600;margin-bottom:2px}.item-meta{font-size:10px;color:#6B82A0}';
+  css+='.bw{height:5px;background:#E5EEFF;border-radius:3px;overflow:hidden;margin-top:3px;width:80px;display:inline-block;vertical-align:middle}';
+  css+='.bf{height:100%;border-radius:3px;background:#3B82F6}';
+  css+='.obj-block{margin-bottom:16px;border:1px solid #D1DCF0;border-radius:8px;padding:12px;page-break-inside:avoid}';
+  css+='.obj-hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}';
+  css+='.obj-nom{font-size:12px;font-weight:700;color:#0F1E35}.obj-pct{font-size:16px;font-weight:800;font-family:monospace;color:#3B82F6;white-space:nowrap}';
+  css+='.child{padding:4px 0 4px 14px;border-left:2px solid #EEF2FF;margin-left:6px;font-size:10px;color:#374151}';
+  css+='.chip{display:inline-block;padding:1px 5px;border-radius:10px;font-size:9px;font-weight:600;margin-right:3px}';
+  css+='.ec{background:#DBEAFE;color:#1D4ED8}.co{background:#D1FAE5;color:#065F46}.ep{background:#FEF3C7;color:#92400E}.ni{background:#F3F4F6;color:#374151}';
+  css+='.footer{margin-top:32px;padding-top:12px;border-top:1px solid #D1DCF0;font-size:10px;color:#6B82A0;text-align:center}';
+  css+='@media print{body{padding:16px}.no-print{display:none}}';
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Reporte — '+CFG.empresa+'</title><style>'+css+'</style></head><body>';
+  html+='<div class="hdr"><h1>📋 '+CFG.empresa+' — Reporte de Objetivos</h1><p>Generado el '+ahora+'</p></div>';
+  html+='<div class="kpis">';
+  html+='<div class="kpi"><div class="kpi-v">'+DB.length+'</div><div class="kpi-l">Total registros</div></div>';
+  html+='<div class="kpi"><div class="kpi-v" style="color:#EF4444">'+(venc.length+crit.length)+'</div><div class="kpi-l">Requieren atención</div></div>';
+  html+='<div class="kpi"><div class="kpi-v" style="color:#10B981">'+comp.length+'</div><div class="kpi-l">Completados</div></div>';
+  html+='<div class="kpi"><div class="kpi-v">'+avG+'%</div><div class="kpi-l">Avance objetivos</div></div>';
+  html+='</div>';
+
+  // ALERTAS SLA
+  if(venc.length||crit.length||prox.length){
+    html+='<div class="section"><h2 style="color:#EF4444">⚠️ Alertas SLA ('+(venc.length+crit.length+prox.length)+' registros)</h2>';
+    if(venc.length){
+      html+='<div style="font-size:10px;font-weight:700;color:#EF4444;padding:4px 0 2px">🔴 VENCIDOS ('+venc.length+')</div>';
+      venc.forEach(function(d){
+        var di=diasR(d.fechaFin);
+        html+='<div class="item"><span class="dot dv"></span><div style="flex:1"><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+(d.responsable||'—')+' · Hace '+Math.abs(di||0)+'d · '+d.estado+'</div></div></div>';
+      });
+    }
+    if(crit.length){
+      html+='<div style="font-size:10px;font-weight:700;color:#F59E0B;padding:6px 0 2px">🟡 CRÍTICOS ≤'+CFG.critico+'d ('+crit.length+')</div>';
+      crit.forEach(function(d){
+        html+='<div class="item"><span class="dot dc"></span><div style="flex:1"><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+(d.responsable||'—')+' · '+diasR(d.fechaFin)+'d rest. · '+d.estado+'</div></div></div>';
+      });
+    }
+    if(prox.length){
+      html+='<div style="font-size:10px;font-weight:700;color:#F97316;padding:6px 0 2px">🟠 PRÓXIMOS ≤'+CFG.proximo+'d ('+prox.length+')</div>';
+      prox.forEach(function(d){
+        html+='<div class="item"><span class="dot dp"></span><div style="flex:1"><div class="item-nom">'+d.nombre+'</div><div class="item-meta">'+d.id+' · '+(d.responsable||'—')+' · '+diasR(d.fechaFin)+'d rest. · '+d.estado+'</div></div></div>';
+      });
+    }
+    html+='</div>';
+  }
+
+  // DESGLOSE POR OBJETIVO
+  if(objs.length){
+    html+='<div class="section"><h2>📊 Desglose por Objetivo ('+objs.length+')</h2>';
+    objs.forEach(function(obj){
+      var av=avanceCalc(obj.uid);
+      var stCls=obj.estado==='Completado'?'co':obj.estado==='En Curso'?'ec':obj.estado==='En Pausa'?'ep':'ni';
+      html+='<div class="obj-block">';
+      html+='<div class="obj-hdr"><div style="flex:1"><div class="obj-nom">'+obj.id+' — '+obj.nombre+'</div>';
+      html+='<div style="font-size:9px;color:#6B82A0;margin-top:2px"><span class="chip '+stCls+'">'+obj.estado+'</span>'+obj.fase+(obj.fechaFin?' · Vence: '+obj.fechaFin:'')+'</div>';
+      html+='<div style="margin-top:5px"><span class="bw"><span class="bf" style="width:'+av+'%"></span></span></div></div>';
+      html+='<div class="obj-pct">'+av+'%</div></div>';
+      var acts=getHijos(obj.uid);
+      acts.forEach(function(act){
+        var avA=avanceCalc(act.uid);
+        var aCls=act.estado==='Completado'?'co':act.estado==='En Curso'?'ec':act.estado==='En Pausa'?'ep':'ni';
+        html+='<div class="child"><span class="chip '+aCls+'">'+act.estado+'</span><b>'+act.id+'</b> '+act.nombre+' <b style="color:#3B82F6">'+avA+'%</b> <span class="bw"><span class="bf" style="width:'+avA+'%"></span></span>';
+        var subs=getHijos(act.uid);
+        subs.forEach(function(sub){
+          var avS=avanceCalc(sub.uid);
+          var sCls=sub.estado==='Completado'?'co':sub.estado==='En Curso'?'ec':'ni';
+          html+='<div style="padding:2px 0 2px 14px;font-size:9px;color:#4B5563"><span class="chip '+sCls+'">'+sub.estado+'</span>'+sub.id+' '+sub.nombre+' <b style="color:#3B82F6">'+avS+'%</b></div>';
+        });
+        html+='</div>';
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
+  html+='<div class="footer">'+CFG.empresa+' · Gestor de Objetivos Legal · '+ahora+'</div>';
+  html+='<br><button class="no-print" onclick="window.print()" style="margin:16px auto;display:block;padding:10px 24px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700">🖨️ Imprimir / Guardar como PDF</button>';
+  html+='</body></html>';
+  w.document.write(html);
+  w.document.close();
+}
+
+function borrarTodo(){if(!confirm('⚠️ ¿Borrar todos los datos?'))return;if(!confirm('Confirmación final: ¿borrar absolutamente todo?'))return;DB=[];cnt={OBJ:0,ACT:0,TAR:0,SUB:0};guardarDatos();actuTodo();toast('Datos eliminados.');}
+
+function actuTodo(){
+  if(vistaActual==='dashboard')renderDash();
+  if(vistaActual==='alertas')renderAlertas();
+  if(vistaActual==='arbol')renderArbol();
+  if(vistaActual==='gestor'){renderT();if(vistaG==='kanban')renderK();}
+  if(vistaActual==='carga')renderCarga();
+}
+
+function toast(msg){
+  var t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(function(){t.remove();},3500);
+}
+</script>
+</body>
+</html>
